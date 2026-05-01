@@ -4,6 +4,14 @@ import './index.css';
 import { Countdown, formatMs } from './timer';
 import { invoke } from '@tauri-apps/api';
 import { listen } from '@tauri-apps/api/event';
+import {
+  createStageBrandingPayload,
+  createStageMessagePayload,
+  createStageStatePayload,
+  GLOBAL_SHORTCUT_EVENT,
+  STAGE_EVENTS,
+} from './stage-contract';
+import { stageWindowClient } from './infrastructure/tauri/stageWindowClient';
 
 function Button({ children, onClick, className = '', variant = 'default' }) {
   const baseClasses = 'px-3 py-2 rounded border shadow-sm hover:opacity-90 transition-all';
@@ -134,7 +142,7 @@ function App() {
     // Auto-position stage window on secondary monitor when app starts
     const autoPositionStage = async () => {
       try {
-        await invoke('position_stage_on_secondary_monitor');
+        await stageWindowClient.positionOnSecondaryMonitor();
       } catch (error) {
         console.log('Failed to auto-position stage window:', error);
       }
@@ -151,7 +159,7 @@ function App() {
     const setupGlobalShortcuts = async () => {
       try {
         // Escuchar eventos de atajos globales
-        unlisten = await listen('global-shortcut', (event) => {
+        unlisten = await listen(GLOBAL_SHORTCUT_EVENT, (event) => {
           const action = event.payload;
           console.log('🔥 Atajo global activado:', action);
 
@@ -217,13 +225,13 @@ function App() {
   // Efecto para actualizar branding automáticamente - MÁS SIMPLE
   useEffect(() => {
     const updateBrandingNow = async () => {
-      const brandingData = {
+      const brandingData = createStageBrandingPayload({
         colors: brandColors,
         logo,
         logoSize,
         blackBackground,
         showBranding,
-      };
+      });
 
       console.log('🔄 Updating branding immediately:', { logoSize, blackBackground, showBranding });
 
@@ -232,10 +240,7 @@ function App() {
 
       // Enviar al stage inmediatamente
       try {
-        await invoke('emit_to_stage', {
-          event: 'stage:branding',
-          payload: JSON.stringify(brandingData),
-        });
+        await stageWindowClient.emitBranding(brandingData);
         console.log('✅ Branding sent successfully');
       } catch (err) {
         console.error('❌ Error sending branding:', err);
@@ -394,13 +399,9 @@ function App() {
 
   const handleToggleStageFullscreen = async () => {
     try {
-      // Get current stage window
-      const stageWin = await invoke('get_window', { label: 'stage' });
-      if (stageWin) {
-        // Toggle fullscreen (we'll toggle the state)
-        await invoke('toggle_stage_fullscreen', { on: !isStageFullscreen });
-        setIsStageFullscreen(!isStageFullscreen);
-      }
+      const nextFullscreenState = !isStageFullscreen;
+      await stageWindowClient.toggleFullscreen(nextFullscreenState);
+      setIsStageFullscreen(nextFullscreenState);
     } catch (error) {
       console.log('Error toggling stage fullscreen:', error);
     }
@@ -575,22 +576,19 @@ function App() {
   };
 
   const sendTimerMessage = async (text, ttlMs = 3000) => {
-    const messageData = {
+    const messageData = createStageMessagePayload({
       text,
       ttlMs,
       fontSize: 150,
       blinking: false,
       replaceTimer: false,
       visible: true,
-    };
+    });
 
     // Actualizar estado global
     setCurrentGlobalMessage(messageData);
 
-    await invoke('emit_to_stage', {
-      event: 'stage:message',
-      payload: JSON.stringify(messageData),
-    });
+    await stageWindowClient.emitMessage(messageData);
 
     // Actualizar estado
     await pushStageState();
@@ -610,51 +608,46 @@ function App() {
     // Usar la referencia actual para obtener los valores más recientes
     const currentTimeConfig = timeConfigRef.current;
 
-    const payload = JSON.stringify({
+    const payload = createStageStatePayload({
       remainingMs: timerRef.current.remainingMs,
       running: timerRef.current.running,
       warnMs: timerRef.current.warnMs,
       negativeMode: timerRef.current.negativeMode,
       color: timerRef.current.color(),
-      colorInfo: colorInfo, // Información detallada del color
-      totalMs: totalMs,
-      // Información de secuencia
-      sequenceMode: sequenceMode,
-      currentSequenceIndex: currentSequenceIndex,
+      colorInfo,
+      totalMs,
+      sequenceMode,
+      currentSequenceIndex,
       totalSequenceTimers: timerSequence.length,
       currentTimerName:
         sequenceMode && timerSequence[currentSequenceIndex]
           ? timerSequence[currentSequenceIndex].name
           : null,
-      // Configuración de hora actual - usar la referencia
       timeConfig: currentTimeConfig,
     });
 
     // Enviar al stage window local
-    await invoke('emit_to_stage', { event: 'stage:state', payload });
+    await stageWindowClient.emitState(payload);
   };
 
   const sendMessage = async () => {
     if (!message.trim()) return;
     const ttlMs = persistMsg ? 24 * 60 * 60 * 1000 : Math.max(1000, messageTtl * 1000);
 
-    const messageData = {
+    const messageData = createStageMessagePayload({
       text: message,
       ttlMs,
       fontSize,
       blinking,
       replaceTimer,
       visible: true,
-    };
+    });
 
     // Actualizar estado global
     setCurrentGlobalMessage(messageData);
 
     // Enviar solo el mensaje, SIN tocar el branding
-    await invoke('emit_to_stage', {
-      event: 'stage:message',
-      payload: JSON.stringify(messageData),
-    });
+    await stageWindowClient.emitMessage(messageData);
 
     // Actualizar estado
     await pushStageState();
@@ -673,23 +666,20 @@ function App() {
   const sendPresetMessage = async (presetText) => {
     const ttlMs = persistMsg ? 24 * 60 * 60 * 1000 : Math.max(1000, messageTtl * 1000);
 
-    const messageData = {
+    const messageData = createStageMessagePayload({
       text: presetText,
       ttlMs,
       fontSize,
       blinking,
       replaceTimer,
       visible: true,
-    };
+    });
 
     // Actualizar estado global
     setCurrentGlobalMessage(messageData);
 
     // Enviar solo el mensaje predefinido, SIN tocar el branding
-    await invoke('emit_to_stage', {
-      event: 'stage:message',
-      payload: JSON.stringify(messageData),
-    });
+    await stageWindowClient.emitMessage(messageData);
 
     // Actualizar estado
     await pushStageState();
@@ -722,7 +712,7 @@ function App() {
     // Limpiar mensaje global
     setCurrentGlobalMessage(null);
 
-    await invoke('emit_to_stage', { event: 'stage:hide-message', payload: '{}' });
+    await stageWindowClient.hideMessage();
 
     // Actualizar estado
     await pushStageState();
@@ -740,7 +730,7 @@ function App() {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Position the stage window on secondary monitor and make fullscreen
-      await invoke('position_stage_on_secondary_monitor');
+      await stageWindowClient.positionOnSecondaryMonitor();
       console.log('Stage positioned on secondary monitor');
 
       // Focus the stage window
@@ -755,17 +745,14 @@ function App() {
           console.log('Timer state sent to stage');
 
           // Send current branding to ensure new window has correct branding
-          const brandingData = {
+          const brandingData = createStageBrandingPayload({
             colors: brandColors,
             logo,
             logoSize,
             blackBackground,
             showBranding,
-          };
-          await invoke('emit_to_stage', {
-            event: 'stage:branding',
-            payload: JSON.stringify(brandingData),
           });
+          await stageWindowClient.emitBranding(brandingData);
           console.log('Branding sent to stage');
         } catch (error) {
           console.error('Error sending data to stage:', error);
@@ -805,7 +792,7 @@ function App() {
     const setupStageListener = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
-        const unlisten = await listen('stage:request-initial-data', async () => {
+        const unlisten = await listen(STAGE_EVENTS.REQUEST_INITIAL_DATA, async () => {
           // Send current timer state ONLY (no branding to avoid reset)
           await pushStageState();
           console.log('Stage requested initial data - sent timer state only');
@@ -832,7 +819,7 @@ function App() {
         const { appWindow } = await import('@tauri-apps/api/window');
         const unlisten = await appWindow.onCloseRequested(async (_event) => {
           try {
-            await invoke('close_stage_window');
+            await stageWindowClient.close();
           } catch (error) {
             console.log('Could not close stage window:', error);
           }

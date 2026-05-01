@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { formatMs } from './timer';
 import { listen } from '@tauri-apps/api/event';
+import {
+  parseStageBrandingPayload,
+  parseStageMessagePayload,
+  parseStageStatePayload,
+  STAGE_EVENTS,
+} from './stage-contract';
 
 function Stage() {
   const [data, setData] = useState({
@@ -64,7 +70,7 @@ function Stage() {
       try {
         const { emit } = await import('@tauri-apps/api/event');
         // Emit to main window to request current data
-        await emit('stage:request-initial-data', {});
+        await emit(STAGE_EVENTS.REQUEST_INITIAL_DATA, {});
       } catch {
         // Silently handle error - stage might not be ready yet.
       }
@@ -77,8 +83,9 @@ function Stage() {
       setTimeout(requestInitialData, 500);
     }
 
-    listen('stage:state', (ev) => {
-      const s = JSON.parse(ev.payload);
+    listen(STAGE_EVENTS.STATE, (ev) => {
+      const s = parseStageStatePayload(ev.payload);
+      if (!s) return;
       // Preserve current time configuration if not in payload
       setData((prevData) => {
         const newData = {
@@ -96,22 +103,25 @@ function Stage() {
       unsubs.push(u);
     });
 
-    listen('stage:message', (ev) => {
+    listen(STAGE_EVENTS.MESSAGE, (ev) => {
+      const payload = parseStageMessagePayload(ev.payload);
+      if (!payload) return;
       const {
         text,
         ttlMs = 4000,
         fontSize = 200,
         blinking = false,
         replaceTimer = false,
-      } = JSON.parse(ev.payload);
+      } = payload;
       const until = Date.now() + ttlMs;
       setMsg({ text, untilTs: until, fontSize, blinking, replaceTimer });
     }).then((u) => {
       unsubs.push(u);
     });
 
-    listen('stage:branding', (ev) => {
-      const brandingData = JSON.parse(ev.payload);
+    listen(STAGE_EVENTS.BRANDING, (ev) => {
+      const brandingData = parseStageBrandingPayload(ev.payload);
+      if (!brandingData) return;
 
       // Apply branding data directly to state
       setBranding((prevBranding) => {
@@ -136,7 +146,7 @@ function Stage() {
       unsubs.push(u);
     });
 
-    listen('stage:hide-message', () => {
+    listen(STAGE_EVENTS.HIDE_MESSAGE, () => {
       console.log('📥 RECEIVED stage:hide-message');
       setMsg(null);
     }).then((u) => {
