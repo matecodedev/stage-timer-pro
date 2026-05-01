@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLatest } from './shared/hooks/useLatest';
+import { useStableCallback } from './shared/hooks/useStableCallback';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Countdown, formatMs } from './timer';
@@ -125,6 +127,33 @@ function App() {
   const timerRef = useRef(null);
   const totalMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
   const [state, setState] = useState({ running: false, remainingMs: totalMs, color: 'green' });
+  const stateRef = useLatest(state);
+  const timerInputsRef = useLatest({
+    hours,
+    minutes,
+    seconds,
+    warn,
+    neg,
+    colorThresholds,
+    enableAdvancedColors,
+  });
+  const sequenceRef = useLatest({
+    timerSequence,
+    currentSequenceIndex,
+    sequenceMode,
+    autoAdvance,
+  });
+  const fullscreenRef = useLatest(isStageFullscreen);
+
+  const createColorThresholds = (inputs) =>
+    inputs.enableAdvancedColors
+      ? {
+          critical: inputs.colorThresholds.critical * 60_000,
+          warning: inputs.colorThresholds.warning * 60_000,
+          caution: inputs.colorThresholds.caution * 60_000,
+          good: inputs.colorThresholds.good / 100,
+        }
+      : null;
 
   // instanciar timer al montar
   useEffect(() => {
@@ -251,39 +280,36 @@ function App() {
   }, [brandColors, logo, logoSize, blackBackground, showBranding]);
 
   // aplicar tiempo inicial
-  const applyInitial = () => {
-    const totalMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
-
-    // Preparar umbrales de color
-    const thresholds = enableAdvancedColors
-      ? {
-          critical: colorThresholds.critical * 60_000, // convertir minutos a ms
-          warning: colorThresholds.warning * 60_000,
-          caution: colorThresholds.caution * 60_000,
-          good: colorThresholds.good / 100, // convertir porcentaje a decimal
-        }
-      : null;
+  const applyInitial = useStableCallback(() => {
+    const inputs = timerInputsRef.current;
+    const totalMs = (inputs.hours * 3600 + inputs.minutes * 60 + inputs.seconds) * 1000;
+    const thresholds = createColorThresholds(inputs);
 
     timerRef.current = new Countdown({
       initialMs: totalMs,
-      warnMs: warn * 60_000,
-      negativeMode: neg,
+      warnMs: inputs.warn * 60_000,
+      negativeMode: inputs.neg,
       colorThresholds: thresholds,
     });
+    const nextState = { running: false, remainingMs: totalMs, color: 'green' };
+    stateRef.current = nextState;
+    setState(nextState);
     pushStageState();
-    setState({ running: false, remainingMs: totalMs, color: 'green' });
-  };
+  });
 
-  const tick = () => {
+  const tick = useStableCallback(() => {
     if (!timerRef.current) return;
     const changed = timerRef.current.tick();
     if (changed) {
       const color = timerRef.current.color();
       const remainingMs = timerRef.current.remainingMs;
       const colorInfo = timerRef.current.getColorInfo();
-      const prevState = state;
+      const prevState = stateRef.current;
+      const nextState = { running: timerRef.current.running, remainingMs, color, colorInfo };
+      const sequence = sequenceRef.current;
 
-      setState({ running: timerRef.current.running, remainingMs, color, colorInfo });
+      stateRef.current = nextState;
+      setState(nextState);
       pushStageState();
 
       // Actualizar badge con tiempo restante
@@ -300,8 +326,8 @@ function App() {
         if (remainingMs <= 0 && prevState.remainingMs > 0) {
           sendNotification(
             '⏰ Timer Terminado',
-            sequenceMode && timerSequence[currentSequenceIndex]
-              ? `${timerSequence[currentSequenceIndex].name} ha finalizado`
+            sequence.sequenceMode && sequence.timerSequence[sequence.currentSequenceIndex]
+              ? `${sequence.timerSequence[sequence.currentSequenceIndex].name} ha finalizado`
               : 'El tiempo ha terminado',
             null,
           );
@@ -322,11 +348,16 @@ function App() {
       }
 
       // Lógica de avance automático en modo secuencia
-      if (sequenceMode && autoAdvance && remainingMs <= 0 && timerRef.current.running) {
+      if (
+        sequence.sequenceMode &&
+        sequence.autoAdvance &&
+        remainingMs <= 0 &&
+        timerRef.current.running
+      ) {
         advanceToNextTimer();
       }
     }
-  };
+  });
 
   // loop de 100ms
   useEffect(() => {
@@ -335,77 +366,90 @@ function App() {
   }, []);
 
   // controles
-  const start = () => {
+  const start = useStableCallback(() => {
+    if (!timerRef.current) return;
     timerRef.current.start();
     pushStageState();
-    setState((s) => ({ ...s, running: true }));
-  };
-  const pause = () => {
+    const nextState = { ...stateRef.current, running: true };
+    stateRef.current = nextState;
+    setState(nextState);
+  });
+  const pause = useStableCallback(() => {
+    if (!timerRef.current) return;
     timerRef.current.pause();
     pushStageState();
-    setState((s) => ({ ...s, running: false }));
-  };
-  const stop = () => {
+    const nextState = { ...stateRef.current, running: false };
+    stateRef.current = nextState;
+    setState(nextState);
+  });
+  const stop = useStableCallback(() => {
+    if (!timerRef.current) return;
     timerRef.current.stop();
     pushStageState();
-    setState((s) => ({
-      ...s,
+    const nextState = {
+      ...stateRef.current,
       remainingMs: timerRef.current.remainingMs,
       running: false,
       color: 'green',
-    }));
-  };
+    };
+    stateRef.current = nextState;
+    setState(nextState);
+  });
 
-  const addMin = (n) => {
+  const addMin = useStableCallback((n) => {
+    if (!timerRef.current) return;
     timerRef.current.add(n * 60_000);
     pushStageState();
-    setState((s) => ({
-      ...s,
+    const nextState = {
+      ...stateRef.current,
       remainingMs: timerRef.current.remainingMs,
       color: timerRef.current.color(),
-    }));
-  };
+    };
+    stateRef.current = nextState;
+    setState(nextState);
+  });
 
-  const setWarnMin = (m) => {
+  const setWarnMin = useStableCallback((m) => {
+    timerInputsRef.current = { ...timerInputsRef.current, warn: m };
     setWarn(m);
-    timerRef.current.setWarnMs(m * 60_000);
+    timerRef.current?.setWarnMs(m * 60_000);
     pushStageState();
-  };
-  const toggleNeg = () => {
-    const v = !neg;
+  });
+  const toggleNeg = useStableCallback(() => {
+    const v = !timerInputsRef.current.neg;
+    timerInputsRef.current = { ...timerInputsRef.current, neg: v };
     setNeg(v);
-    timerRef.current.setNegative(v);
+    timerRef.current?.setNegative(v);
     pushStageState();
-  };
+  });
 
   // Funciones para atajos globales
-  const handleStartStop = () => {
+  const handleStartStop = useStableCallback(() => {
     if (!timerRef.current) return;
     // Usar directamente el estado del timer en lugar del estado de React
     if (timerRef.current.running) {
       pause();
-      setState((s) => ({ ...s, running: false }));
     } else {
       start();
-      setState((s) => ({ ...s, running: true }));
     }
-  };
+  });
 
-  const handleReset = () => {
+  const handleReset = useStableCallback(() => {
     if (!timerRef.current) return;
     stop();
     applyInitial();
-  };
+  });
 
-  const handleToggleStageFullscreen = async () => {
+  const handleToggleStageFullscreen = useStableCallback(async () => {
     try {
-      const nextFullscreenState = !isStageFullscreen;
+      const nextFullscreenState = !fullscreenRef.current;
       await stageWindowClient.toggleFullscreen(nextFullscreenState);
+      fullscreenRef.current = nextFullscreenState;
       setIsStageFullscreen(nextFullscreenState);
     } catch (error) {
       console.log('Error toggling stage fullscreen:', error);
     }
-  };
+  });
 
   // Funciones de notificación y badge
   const sendNotification = async (title, body, icon = null) => {
@@ -491,8 +535,14 @@ function App() {
   };
 
   const startSequence = () => {
-    if (timerSequence.length === 0) return;
+    const sequence = sequenceRef.current;
+    if (sequence.timerSequence.length === 0) return;
 
+    sequenceRef.current = {
+      ...sequence,
+      sequenceMode: true,
+      currentSequenceIndex: 0,
+    };
     setSequenceMode(true);
     setCurrentSequenceIndex(0);
     loadTimerFromSequence(0);
@@ -500,47 +550,58 @@ function App() {
   };
 
   const stopSequence = () => {
+    sequenceRef.current = {
+      ...sequenceRef.current,
+      sequenceMode: false,
+      currentSequenceIndex: 0,
+    };
     setSequenceMode(false);
     setCurrentSequenceIndex(0);
     stop();
   };
 
-  const loadTimerFromSequence = (index) => {
-    if (index >= timerSequence.length) return;
+  const loadTimerFromSequence = useStableCallback((index) => {
+    const sequence = sequenceRef.current;
+    const inputs = timerInputsRef.current;
+    if (index >= sequence.timerSequence.length) return;
 
-    const timer = timerSequence[index];
+    const timer = sequence.timerSequence[index];
+    timerInputsRef.current = {
+      ...inputs,
+      hours: timer.hours,
+      minutes: timer.minutes,
+      seconds: timer.seconds,
+    };
     setHours(timer.hours);
     setMinutes(timer.minutes);
     setSeconds(timer.seconds);
-
-    // Preparar umbrales de color
-    const thresholds = enableAdvancedColors
-      ? {
-          critical: colorThresholds.critical * 60_000,
-          warning: colorThresholds.warning * 60_000,
-          caution: colorThresholds.caution * 60_000,
-          good: colorThresholds.good / 100,
-        }
-      : null;
+    const thresholds = createColorThresholds(inputs);
 
     // Aplicar el timer
     timerRef.current = new Countdown({
       initialMs: timer.totalMs,
-      warnMs: warn * 60_000,
-      negativeMode: neg,
+      warnMs: inputs.warn * 60_000,
+      negativeMode: inputs.neg,
       colorThresholds: thresholds,
     });
-    setState({ running: false, remainingMs: timer.totalMs, color: 'green' });
+    const nextState = { running: false, remainingMs: timer.totalMs, color: 'green' };
+    stateRef.current = nextState;
+    setState(nextState);
     pushStageState();
 
     // Enviar mensaje con nombre del timer actual
     sendTimerMessage(`${timer.name}`, 3000);
-  };
+  });
 
-  const advanceToNextTimer = () => {
-    const nextIndex = currentSequenceIndex + 1;
+  const advanceToNextTimer = useStableCallback(() => {
+    const sequence = sequenceRef.current;
+    const nextIndex = sequence.currentSequenceIndex + 1;
 
-    if (nextIndex < timerSequence.length) {
+    if (nextIndex < sequence.timerSequence.length) {
+      sequenceRef.current = {
+        ...sequence,
+        currentSequenceIndex: nextIndex,
+      };
       setCurrentSequenceIndex(nextIndex);
       loadTimerFromSequence(nextIndex);
       // Auto-start el siguiente timer
@@ -552,20 +613,30 @@ function App() {
       }, 100);
     } else {
       // Secuencia completada
+      sequenceRef.current = {
+        ...sequence,
+        sequenceMode: false,
+        currentSequenceIndex: 0,
+      };
       setSequenceMode(false);
       setCurrentSequenceIndex(0);
       sendTimerMessage('SECUENCIA COMPLETADA', 5000);
     }
-  };
+  });
 
   const jumpToSequenceTimer = (index) => {
-    if (index >= timerSequence.length) return;
+    const sequence = sequenceRef.current;
+    if (index >= sequence.timerSequence.length) return;
 
+    sequenceRef.current = {
+      ...sequence,
+      currentSequenceIndex: index,
+    };
     setCurrentSequenceIndex(index);
     loadTimerFromSequence(index);
 
     // Si estaba corriendo, continuar con el nuevo timer
-    if (state.running) {
+    if (stateRef.current.running) {
       setTimeout(() => {
         if (timerRef.current) {
           timerRef.current.start();
@@ -575,7 +646,7 @@ function App() {
     }
   };
 
-  const sendTimerMessage = async (text, ttlMs = 3000) => {
+  const sendTimerMessage = useStableCallback(async (text, ttlMs = 3000) => {
     const messageData = createStageMessagePayload({
       text,
       ttlMs,
@@ -598,11 +669,15 @@ function App() {
       setCurrentGlobalMessage(null);
       pushStageState();
     }, ttlMs);
-  };
+  });
 
   // Enviar estado al Stage
-  const pushStageState = async () => {
-    const totalMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
+  const pushStageState = useStableCallback(async () => {
+    if (!timerRef.current) return;
+
+    const inputs = timerInputsRef.current;
+    const sequence = sequenceRef.current;
+    const totalMs = (inputs.hours * 3600 + inputs.minutes * 60 + inputs.seconds) * 1000;
     const colorInfo = timerRef.current ? timerRef.current.getColorInfo() : null;
 
     // Usar la referencia actual para obtener los valores más recientes
@@ -616,21 +691,21 @@ function App() {
       color: timerRef.current.color(),
       colorInfo,
       totalMs,
-      sequenceMode,
-      currentSequenceIndex,
-      totalSequenceTimers: timerSequence.length,
+      sequenceMode: sequence.sequenceMode,
+      currentSequenceIndex: sequence.currentSequenceIndex,
+      totalSequenceTimers: sequence.timerSequence.length,
       currentTimerName:
-        sequenceMode && timerSequence[currentSequenceIndex]
-          ? timerSequence[currentSequenceIndex].name
+        sequence.sequenceMode && sequence.timerSequence[sequence.currentSequenceIndex]
+          ? sequence.timerSequence[sequence.currentSequenceIndex].name
           : null,
       timeConfig: currentTimeConfig,
     });
 
     // Enviar al stage window local
     await stageWindowClient.emitState(payload);
-  };
+  });
 
-  const sendMessage = async () => {
+  const sendMessage = useStableCallback(async () => {
     if (!message.trim()) return;
     const ttlMs = persistMsg ? 24 * 60 * 60 * 1000 : Math.max(1000, messageTtl * 1000);
 
@@ -661,7 +736,7 @@ function App() {
         pushStageState();
       }, ttlMs);
     }
-  };
+  });
 
   const sendPresetMessage = async (presetText) => {
     const ttlMs = persistMsg ? 24 * 60 * 60 * 1000 : Math.max(1000, messageTtl * 1000);
@@ -708,7 +783,7 @@ function App() {
     return '#FFFFFF'; // Siempre blanco para buena legibilidad
   };
 
-  const hideMessage = async () => {
+  const hideMessage = useStableCallback(async () => {
     // Limpiar mensaje global
     setCurrentGlobalMessage(null);
 
@@ -716,7 +791,7 @@ function App() {
 
     // Actualizar estado
     await pushStageState();
-  };
+  });
 
   const openFullscreen = async () => {
     try {
@@ -763,40 +838,46 @@ function App() {
     }
   };
 
+  const handleLocalKeydown = useStableCallback((event) => {
+    if (event.code === 'Space') {
+      event.preventDefault();
+      // Usar el ref para obtener el estado actual del timer
+      if (timerRef.current && timerRef.current.running) {
+        pause();
+      } else {
+        start();
+      }
+    }
+    if (event.key === 's' || event.key === 'S') stop();
+    if (event.key === '+') addMin(1);
+    if (event.key === '-') addMin(-1);
+    if ((event.ctrlKey || event.metaKey) && event.key === '+') addMin(5);
+    if ((event.ctrlKey || event.metaKey) && event.key === '-') addMin(-5);
+    if (event.key === 'm' || event.key === 'M') sendMessage();
+    if (event.key === 'h' || event.key === 'H') hideMessage();
+  });
+
   // hotkeys
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        // Usar el ref para obtener el estado actual del timer
-        if (timerRef.current && timerRef.current.running) {
-          pause();
-        } else {
-          start();
-        }
-      }
-      if (e.key === 's' || e.key === 'S') stop();
-      if (e.key === '+') addMin(1);
-      if (e.key === '-') addMin(-1);
-      if ((e.ctrlKey || e.metaKey) && e.key === '+') addMin(5);
-      if ((e.ctrlKey || e.metaKey) && e.key === '-') addMin(-5);
-      if (e.key === 'm' || e.key === 'M') sendMessage();
-      if (e.key === 'h' || e.key === 'H') hideMessage();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []); // Remover todas las dependencias innecesarias
+    window.addEventListener('keydown', handleLocalKeydown);
+    return () => window.removeEventListener('keydown', handleLocalKeydown);
+  }, [handleLocalKeydown]);
+
+  const handleStageRequestInitialData = useStableCallback(async () => {
+    // Send current timer state ONLY (no branding to avoid reset)
+    await pushStageState();
+    console.log('Stage requested initial data - sent timer state only');
+  });
 
   // Listen for stage window requesting initial data
   useEffect(() => {
     const setupStageListener = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
-        const unlisten = await listen(STAGE_EVENTS.REQUEST_INITIAL_DATA, async () => {
-          // Send current timer state ONLY (no branding to avoid reset)
-          await pushStageState();
-          console.log('Stage requested initial data - sent timer state only');
-        });
+        const unlisten = await listen(
+          STAGE_EVENTS.REQUEST_INITIAL_DATA,
+          handleStageRequestInitialData,
+        );
         return unlisten;
       } catch (error) {
         console.log('Could not setup stage listener:', error);
@@ -810,7 +891,7 @@ function App() {
     return () => {
       if (unlisten) unlisten();
     };
-  }, []);
+  }, [handleStageRequestInitialData]);
 
   // Close stage window when dashboard closes
   useEffect(() => {
