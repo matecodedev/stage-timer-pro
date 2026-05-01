@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "Stage Timer Pro",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   "tauri": {
     "bundle": {

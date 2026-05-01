@@ -1,6 +1,6 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { resolve } from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 // Forzamos el puerto que tauri.conf.json (devPath) espera
 export default defineConfig({
@@ -12,8 +12,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"),
-        stage: resolve(__dirname, "stage.html"),
+        main: resolve(__dirname, 'index.html'),
+        stage: resolve(__dirname, 'stage.html'),
       },
     },
   },

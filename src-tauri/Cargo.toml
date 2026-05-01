@@ -1,6 +1,6 @@
 [package]
 name = "stage-timer"
-version = "0.1.0"
+version = "1.0.3"
 description = "Aplicación profesional de timer para eventos con branding personalizable y soporte dual monitor"
 authors = ["MateCode <info@matecode.dev>"]
 license = "MIT"

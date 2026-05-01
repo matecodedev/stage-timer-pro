@@ -1,0 +1,11 @@
+node_modules/
+dist/
+src-tauri/target/
+website/node_modules/
+website/dist/
+.npm-cache/
+package-lock.json
+*.lock
+website/
+docs/
+*.md

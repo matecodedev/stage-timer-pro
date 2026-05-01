@@ -2,7 +2,7 @@ name: Build Stage Timer Pro
 
 on:
   push:
-    tags: ["v*"]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -17,9 +17,9 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: "--target universal-apple-darwin"
+            args: '--target universal-apple-darwin'
           - platform: windows-latest
-            args: ""
+            args: ''
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 60
@@ -35,16 +35,16 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: './src-tauri -> target'
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
-          cache: "npm"
+          node-version-file: .nvmrc
+          cache: 'npm'
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
@@ -52,17 +52,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "Stage Timer Pro ${{ github.ref_name }}"
+          releaseName: 'Stage Timer Pro ${{ github.ref_name }}'
           releaseBody: |
             🎯 **Stage Timer Pro** - Aplicación profesional de timer para eventos
-            
+
             ✨ **Características:**
             - ⌨️ Atajos globales (⌘+Shift+Space, ⌘+Shift+R, ⌘+Shift+F)
             - 🔔 Notificaciones nativas y badges en dock
             - 🎥 Integración con Resolume Arena (OBS + NDI)
             - 🖥️ Soporte dual monitor automático
             - 🎨 Sistema de branding profesional
-            
+
             📦 **Instaladores disponibles:**
             - 🍎 macOS: Stage Timer Pro.dmg (Universal - Intel + Apple Silicon)
             - 🪟 Windows: Stage Timer Pro Setup.msi

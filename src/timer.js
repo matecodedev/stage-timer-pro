@@ -5,18 +5,13 @@ export function formatMs(ms, showNegative) {
   const s = totalSec % 60;
   const m = Math.floor(totalSec / 60) % 60;
   const h = Math.floor(totalSec / 3600);
-  const pad = (n) => String(n).padStart(2, "0");
+  const pad = (n) => String(n).padStart(2, '0');
   const core = h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
   return neg && showNegative ? `-${core}` : core;
 }
 
 export class Countdown {
-  constructor({
-    initialMs,
-    warnMs = 5 * 60_000,
-    negativeMode = false,
-    colorThresholds = null,
-  }) {
+  constructor({ initialMs, warnMs = 5 * 60_000, negativeMode = false, colorThresholds = null }) {
     this.initialMs = initialMs;
     this.remainingMs = initialMs;
     this.warnMs = warnMs;
@@ -72,94 +67,94 @@ export class Countdown {
   }
   color() {
     // Si está en negativo, siempre rojo
-    if (this.remainingMs <= 0) return "red";
+    if (this.remainingMs <= 0) return 'red';
 
     // Usar umbrales avanzados si están disponibles
     if (this.colorThresholds) {
       const remainingPercent = this.remainingMs / this.initialMs;
 
       // Crítico: Últimos 2 minutos (o configurado)
-      if (this.remainingMs <= this.colorThresholds.critical) return "critical";
+      if (this.remainingMs <= this.colorThresholds.critical) return 'critical';
 
       // Warning: Últimos 5 minutos (o configurado)
-      if (this.remainingMs <= this.colorThresholds.warning) return "warning";
+      if (this.remainingMs <= this.colorThresholds.warning) return 'warning';
 
       // Caution: Últimos 10 minutos (o configurado)
-      if (this.remainingMs <= this.colorThresholds.caution) return "caution";
+      if (this.remainingMs <= this.colorThresholds.caution) return 'caution';
 
       // Good zone: Más del 25% del tiempo restante
-      if (remainingPercent >= this.colorThresholds.good) return "good";
+      if (remainingPercent >= this.colorThresholds.good) return 'good';
 
       // Transition zone: Entre caution y good
-      return "transition";
+      return 'transition';
     }
 
     // Fallback al sistema original
-    if (this.remainingMs <= this.warnMs) return "yellow";
-    return "green";
+    if (this.remainingMs <= this.warnMs) return 'yellow';
+    return 'green';
   }
 
   // Función para obtener información detallada del color
   getColorInfo() {
     const colorState = this.color();
-    const remainingPercent = (this.remainingMs / this.initialMs) * 100;
+    const remainingPercent = this.initialMs > 0 ? (this.remainingMs / this.initialMs) * 100 : 0;
 
     const colorMap = {
       critical: {
-        name: "Crítico",
-        bgColor: "#DC2626",
-        textColor: "#FFFFFF",
-        intensity: "high",
-        description: "Tiempo crítico",
+        name: 'Crítico',
+        bgColor: '#DC2626',
+        textColor: '#FFFFFF',
+        intensity: 'high',
+        description: 'Tiempo crítico',
       },
       warning: {
-        name: "Alerta",
-        bgColor: "#EF4444",
-        textColor: "#FFFFFF",
-        intensity: "medium-high",
-        description: "Pocos minutos restantes",
+        name: 'Alerta',
+        bgColor: '#EF4444',
+        textColor: '#FFFFFF',
+        intensity: 'medium-high',
+        description: 'Pocos minutos restantes',
       },
       caution: {
-        name: "Precaución",
-        bgColor: "#F59E0B",
-        textColor: "#FFFFFF",
-        intensity: "medium",
-        description: "Atención al tiempo",
+        name: 'Precaución',
+        bgColor: '#F59E0B',
+        textColor: '#FFFFFF',
+        intensity: 'medium',
+        description: 'Atención al tiempo',
       },
       transition: {
-        name: "Transición",
-        bgColor: "#10B981",
-        textColor: "#FFFFFF",
-        intensity: "low",
-        description: "Tiempo moderado",
+        name: 'Transición',
+        bgColor: '#10B981',
+        textColor: '#FFFFFF',
+        intensity: 'low',
+        description: 'Tiempo moderado',
       },
       good: {
-        name: "Bueno",
-        bgColor: "#059669",
-        textColor: "#FFFFFF",
-        intensity: "none",
-        description: "Tiempo abundante",
+        name: 'Bueno',
+        bgColor: '#059669',
+        textColor: '#FFFFFF',
+        intensity: 'none',
+        description: 'Tiempo abundante',
       },
       red: {
-        name: "Terminado",
-        bgColor: "#DC2626",
-        textColor: "#FFFFFF",
-        intensity: "critical",
-        description: "Tiempo agotado",
+        name: 'Terminado',
+        bgColor: '#DC2626',
+        textColor: '#FFFFFF',
+        intensity: 'critical',
+        description: 'Tiempo agotado',
       },
       yellow: {
-        name: "Advertencia",
-        bgColor: "#F59E0B",
-        textColor: "#FFFFFF",
-        intensity: "medium",
-        description: "Tiempo de advertencia",
+        name: 'Advertencia',
+        bgColor: '#F59E0B',
+        textColor: '#FFFFFF',
+        intensity: 'medium',
+        description: 'Tiempo de advertencia',
       },
       green: {
-        name: "Normal",
-        bgColor: "#059669",
-        textColor: "#FFFFFF",
-        intensity: "none",
-        description: "Tiempo normal",
+        name: 'Normal',
+        bgColor: '#059669',
+        textColor: '#FFFFFF',
+        intensity: 'none',
+        description: 'Tiempo normal',
       },
     };
 

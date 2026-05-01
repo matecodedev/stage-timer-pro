@@ -41,3 +41,6 @@ Thumbs.db
 *.msi
 *.deb
 *.AppImage
+
+# Local npm cache used by Codex sandbox
+.npm-cache/
