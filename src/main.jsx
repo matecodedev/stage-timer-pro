@@ -5,98 +5,85 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Countdown, formatMs } from './timer';
 import { invoke } from '@tauri-apps/api';
-import { listen } from '@tauri-apps/api/event';
-import {
-  createStageBrandingPayload,
-  createStageMessagePayload,
-  createStageStatePayload,
-  GLOBAL_SHORTCUT_EVENT,
-  STAGE_EVENTS,
-} from './stage-contract';
 import { stageWindowClient } from './infrastructure/tauri/stageWindowClient';
-
-function Button({ children, onClick, className = '', variant = 'default' }) {
-  const baseClasses = 'px-3 py-2 rounded border shadow-sm hover:opacity-90 transition-all';
-  const variants = {
-    default:
-      'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white',
-    primary: 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600',
-    success: 'bg-green-500 text-white border-green-500 hover:bg-green-600',
-    warning: 'bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600',
-    danger: 'bg-red-500 text-white border-red-500 hover:bg-red-600',
-  };
-  return (
-    <button onClick={onClick} className={`${baseClasses} ${variants[variant]} ${className}`}>
-      {children}
-    </button>
-  );
-}
-
-// Función para formatear tiempo de milisegundos a HH:MM:SS
-function formatTime(milliseconds) {
-  if (!milliseconds || milliseconds < 0) return '00:00:00';
-
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
+import { Button } from './dashboard/components/Button';
+import { createDashboardBrandingPayload } from './dashboard/branding';
+import { createDashboardStageStatePayload } from './dashboard/stageState';
+import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
+import { useDashboardKeyboardShortcuts } from './dashboard/hooks/useDashboardKeyboardShortcuts';
+import { useGlobalShortcuts } from './dashboard/hooks/useGlobalShortcuts';
+import { useStageInitialDataRequest } from './dashboard/hooks/useStageInitialDataRequest';
+import {
+  DEFAULT_BRAND_COLORS,
+  DEFAULT_BRANDING,
+  DEFAULT_COLOR_THRESHOLDS,
+  DEFAULT_MESSAGE_OPTIONS,
+  DEFAULT_SEQUENCE_TIMER_INPUTS,
+  DEFAULT_TIME_CONFIG,
+  DEFAULT_TIMER_INPUTS,
+  PRESET_MESSAGES,
+  SEQUENCE_AUTOSTART_DELAY_MS,
+  SEQUENCE_COMPLETED_TTL_MS,
+  SEQUENCE_MESSAGE_TTL_MS,
+  STAGE_AUTO_POSITION_DELAY_MS,
+  STAGE_CREATE_READY_DELAY_MS,
+  STAGE_SEND_DATA_DELAY_MS,
+  TIMER_TICK_INTERVAL_MS,
+} from './dashboard/constants';
+import {
+  createDashboardMessagePayload,
+  createSequenceMessagePayload,
+  resolveMessageTtlMs,
+} from './dashboard/messages';
+import {
+  getPreviewBackgroundColor as resolvePreviewBackgroundColor,
+  getPreviewTextColor as resolvePreviewTextColor,
+} from './dashboard/preview';
+import {
+  calculateTotalMs,
+  createColorThresholds,
+  createTimeConfig,
+  formatDashboardTime,
+} from './dashboard/timeConfig';
 
 function App() {
   // Estados del timer (ahora con horas, minutos, segundos)
-  const [hours, setHours] = useState(0);
-  const [minutes, setMinutes] = useState(15);
-  const [seconds, setSeconds] = useState(0);
-  const [warn, setWarn] = useState(5); // en minutos
-  const [neg, setNeg] = useState(false);
+  const [hours, setHours] = useState(DEFAULT_TIMER_INPUTS.hours);
+  const [minutes, setMinutes] = useState(DEFAULT_TIMER_INPUTS.minutes);
+  const [seconds, setSeconds] = useState(DEFAULT_TIMER_INPUTS.seconds);
+  const [warn, setWarn] = useState(DEFAULT_TIMER_INPUTS.warn); // en minutos
+  const [neg, setNeg] = useState(DEFAULT_TIMER_INPUTS.negativeMode);
 
   // Estados para colores avanzados del timer
-  const [colorThresholds, setColorThresholds] = useState({
-    critical: 2, // minutos - Rojo crítico
-    warning: 5, // minutos - Amarillo/Naranja
-    caution: 10, // minutos - Amarillo claro
-    good: 25, // porcentaje - Verde/Azul
-  });
+  const [colorThresholds, setColorThresholds] = useState(DEFAULT_COLOR_THRESHOLDS);
   const [enableAdvancedColors, setEnableAdvancedColors] = useState(true);
 
   // Estados para display de hora actual
-  const [showCurrentTime, setShowCurrentTime] = useState(true);
-  const [timeFormat24h, setTimeFormat24h] = useState(true);
-  const [showSeconds, setShowSeconds] = useState(true);
-  const [timePosition, setTimePosition] = useState('top-right'); // top-left, top-right, bottom-left, bottom-right
+  const [showCurrentTime, setShowCurrentTime] = useState(DEFAULT_TIME_CONFIG.showCurrentTime);
+  const [timeFormat24h, setTimeFormat24h] = useState(DEFAULT_TIME_CONFIG.timeFormat24h);
+  const [showSeconds, setShowSeconds] = useState(DEFAULT_TIME_CONFIG.showSeconds);
+  const [timePosition, setTimePosition] = useState(DEFAULT_TIME_CONFIG.timePosition); // top-left, top-right, bottom-left, bottom-right
 
   // Estado para controlar fullscreen del stage
   const [isStageFullscreen, setIsStageFullscreen] = useState(true);
 
   // Referencias para acceder a los valores más actuales
-  const timeConfigRef = useRef({
-    showCurrentTime: true,
-    timeFormat24h: true,
-    showSeconds: true,
-    timePosition: 'top-right',
-  });
+  const timeConfigRef = useRef(DEFAULT_TIME_CONFIG);
 
   // Estados de mensajes mejorados
   const [message, setMessage] = useState('');
-  const [messageTtl, setMessageTtl] = useState(4); // seg
+  const [messageTtl, setMessageTtl] = useState(DEFAULT_MESSAGE_OPTIONS.messageTtlSeconds); // seg
   const [persistMsg, setPersistMsg] = useState(false);
-  const [fontSize, setFontSize] = useState(200); // px - Aumentado a 200px por defecto
-  const [blinking, setBlinking] = useState(false);
-  const [replaceTimer, setReplaceTimer] = useState(false);
+  const [fontSize, setFontSize] = useState(DEFAULT_MESSAGE_OPTIONS.fontSize); // px - Aumentado a 200px por defecto
+  const [blinking, setBlinking] = useState(DEFAULT_MESSAGE_OPTIONS.blinking);
+  const [replaceTimer, setReplaceTimer] = useState(DEFAULT_MESSAGE_OPTIONS.replaceTimer);
 
   // Estados de branding (solo logo)
-  const [brandColors] = useState({
-    primary: '#3B82F6',
-    secondary: '#10B981',
-    background: '#1F2937',
-    accent: '#F59E0B',
-  });
-  const [logo, setLogo] = useState('');
-  const [logoSize, setLogoSize] = useState(120); // Tamaño en píxeles, sincronizado con stage
-  const [blackBackground, setBlackBackground] = useState(false);
-  const [showBranding, setShowBranding] = useState(true);
+  const [brandColors] = useState(DEFAULT_BRAND_COLORS);
+  const [logo, setLogo] = useState(DEFAULT_BRANDING.logo);
+  const [logoSize, setLogoSize] = useState(DEFAULT_BRANDING.logoSize); // Tamaño en píxeles, sincronizado con stage
+  const [blackBackground, setBlackBackground] = useState(DEFAULT_BRANDING.blackBackground);
+  const [showBranding, setShowBranding] = useState(DEFAULT_BRANDING.showBranding);
 
   // Estados globales para mensajes y branding actual
   const [, setCurrentGlobalMessage] = useState(null);
@@ -109,23 +96,16 @@ function App() {
   const [autoAdvance, setAutoAdvance] = useState(true);
 
   // Estado temporal para agregar nuevos timers a la secuencia
-  const [newTimerName, setNewTimerName] = useState('');
-  const [newTimerHours, setNewTimerHours] = useState(0);
-  const [newTimerMinutes, setNewTimerMinutes] = useState(5);
-  const [newTimerSeconds, setNewTimerSeconds] = useState(0);
+  const [newTimerName, setNewTimerName] = useState(DEFAULT_SEQUENCE_TIMER_INPUTS.name);
+  const [newTimerHours, setNewTimerHours] = useState(DEFAULT_SEQUENCE_TIMER_INPUTS.hours);
+  const [newTimerMinutes, setNewTimerMinutes] = useState(DEFAULT_SEQUENCE_TIMER_INPUTS.minutes);
+  const [newTimerSeconds, setNewTimerSeconds] = useState(DEFAULT_SEQUENCE_TIMER_INPUTS.seconds);
 
   // Mensajes predefinidos
-  const [presetMessages] = useState([
-    'TIME OUT',
-    'BREAK',
-    '5 MINUTOS',
-    'ÚLTIMO MINUTO',
-    'FINALIZANDO',
-    'PREPARARSE',
-  ]);
+  const [presetMessages] = useState(PRESET_MESSAGES);
 
   const timerRef = useRef(null);
-  const totalMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
+  const totalMs = calculateTotalMs({ hours, minutes, seconds });
   const [state, setState] = useState({ running: false, remainingMs: totalMs, color: 'green' });
   const stateRef = useLatest(state);
   const timerInputsRef = useLatest({
@@ -145,19 +125,9 @@ function App() {
   });
   const fullscreenRef = useLatest(isStageFullscreen);
 
-  const createColorThresholds = (inputs) =>
-    inputs.enableAdvancedColors
-      ? {
-          critical: inputs.colorThresholds.critical * 60_000,
-          warning: inputs.colorThresholds.warning * 60_000,
-          caution: inputs.colorThresholds.caution * 60_000,
-          good: inputs.colorThresholds.good / 100,
-        }
-      : null;
-
   // instanciar timer al montar
   useEffect(() => {
-    const totalMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
+    const totalMs = calculateTotalMs({ hours, minutes, seconds });
     timerRef.current = new Countdown({
       initialMs: totalMs,
       warnMs: warn * 60_000,
@@ -178,50 +148,8 @@ function App() {
     };
 
     // Wait a bit for the stage window to be ready
-    setTimeout(autoPositionStage, 1000);
+    setTimeout(autoPositionStage, STAGE_AUTO_POSITION_DELAY_MS);
   }, []);
-
-  // Manejar atajos globales
-  useEffect(() => {
-    let unlisten = null;
-
-    const setupGlobalShortcuts = async () => {
-      try {
-        // Escuchar eventos de atajos globales
-        unlisten = await listen(GLOBAL_SHORTCUT_EVENT, (event) => {
-          const action = event.payload;
-          console.log('🔥 Atajo global activado:', action);
-
-          switch (action) {
-            case 'toggle-timer':
-              handleStartStop();
-              break;
-            case 'reset-timer':
-              handleReset();
-              break;
-            case 'toggle-stage-fullscreen':
-              handleToggleStageFullscreen();
-              break;
-            default:
-              console.log('Acción de atajo global no reconocida:', action);
-          }
-        });
-
-        console.log('✅ Atajos globales configurados');
-      } catch (error) {
-        console.error('❌ Error configurando atajos globales:', error);
-      }
-    };
-
-    setupGlobalShortcuts();
-
-    // Cleanup
-    return () => {
-      if (unlisten) {
-        unlisten();
-      }
-    };
-  }, []); // Solo al montar
 
   // Aplicar siempre modo oscuro
   useEffect(() => {
@@ -243,18 +171,18 @@ function App() {
 
   // Actualizar la referencia de timeConfig cuando cambien los valores
   useEffect(() => {
-    timeConfigRef.current = {
+    timeConfigRef.current = createTimeConfig({
       showCurrentTime,
       timeFormat24h,
       showSeconds,
       timePosition,
-    };
+    });
   }, [showCurrentTime, timeFormat24h, showSeconds, timePosition]);
 
   // Efecto para actualizar branding automáticamente - MÁS SIMPLE
   useEffect(() => {
     const updateBrandingNow = async () => {
-      const brandingData = createStageBrandingPayload({
+      const brandingData = createDashboardBrandingPayload({
         colors: brandColors,
         logo,
         logoSize,
@@ -282,7 +210,7 @@ function App() {
   // aplicar tiempo inicial
   const applyInitial = useStableCallback(() => {
     const inputs = timerInputsRef.current;
-    const totalMs = (inputs.hours * 3600 + inputs.minutes * 60 + inputs.seconds) * 1000;
+    const totalMs = calculateTotalMs(inputs);
     const thresholds = createColorThresholds(inputs);
 
     timerRef.current = new Countdown({
@@ -361,7 +289,7 @@ function App() {
 
   // loop de 100ms
   useEffect(() => {
-    const id = setInterval(tick, 100);
+    const id = setInterval(tick, TIMER_TICK_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
 
@@ -451,6 +379,17 @@ function App() {
     }
   });
 
+  const globalShortcutHandlers = useMemo(
+    () => ({
+      toggleTimer: handleStartStop,
+      resetTimer: handleReset,
+      toggleStageFullscreen: handleToggleStageFullscreen,
+    }),
+    [handleStartStop, handleReset, handleToggleStageFullscreen],
+  );
+
+  useGlobalShortcuts(globalShortcutHandlers);
+
   // Funciones de notificación y badge
   const sendNotification = async (title, body, icon = null) => {
     try {
@@ -517,7 +456,11 @@ function App() {
       hours: newTimerHours,
       minutes: newTimerMinutes,
       seconds: newTimerSeconds,
-      totalMs: (newTimerHours * 3600 + newTimerMinutes * 60 + newTimerSeconds) * 1000,
+      totalMs: calculateTotalMs({
+        hours: newTimerHours,
+        minutes: newTimerMinutes,
+        seconds: newTimerSeconds,
+      }),
     };
 
     setTimerSequence((prev) => [...prev, newTimer]);
@@ -590,7 +533,7 @@ function App() {
     pushStageState();
 
     // Enviar mensaje con nombre del timer actual
-    sendTimerMessage(`${timer.name}`, 3000);
+    sendTimerMessage(`${timer.name}`, SEQUENCE_MESSAGE_TTL_MS);
   });
 
   const advanceToNextTimer = useStableCallback(() => {
@@ -610,7 +553,7 @@ function App() {
           timerRef.current.start();
           pushStageState();
         }
-      }, 100);
+      }, SEQUENCE_AUTOSTART_DELAY_MS);
     } else {
       // Secuencia completada
       sequenceRef.current = {
@@ -620,7 +563,7 @@ function App() {
       };
       setSequenceMode(false);
       setCurrentSequenceIndex(0);
-      sendTimerMessage('SECUENCIA COMPLETADA', 5000);
+      sendTimerMessage('SECUENCIA COMPLETADA', SEQUENCE_COMPLETED_TTL_MS);
     }
   });
 
@@ -642,19 +585,12 @@ function App() {
           timerRef.current.start();
           pushStageState();
         }
-      }, 100);
+      }, SEQUENCE_AUTOSTART_DELAY_MS);
     }
   };
 
-  const sendTimerMessage = useStableCallback(async (text, ttlMs = 3000) => {
-    const messageData = createStageMessagePayload({
-      text,
-      ttlMs,
-      fontSize: 150,
-      blinking: false,
-      replaceTimer: false,
-      visible: true,
-    });
+  const sendTimerMessage = useStableCallback(async (text, ttlMs = SEQUENCE_MESSAGE_TTL_MS) => {
+    const messageData = createSequenceMessagePayload({ text, ttlMs });
 
     // Actualizar estado global
     setCurrentGlobalMessage(messageData);
@@ -677,28 +613,11 @@ function App() {
 
     const inputs = timerInputsRef.current;
     const sequence = sequenceRef.current;
-    const totalMs = (inputs.hours * 3600 + inputs.minutes * 60 + inputs.seconds) * 1000;
-    const colorInfo = timerRef.current ? timerRef.current.getColorInfo() : null;
-
-    // Usar la referencia actual para obtener los valores más recientes
-    const currentTimeConfig = timeConfigRef.current;
-
-    const payload = createStageStatePayload({
-      remainingMs: timerRef.current.remainingMs,
-      running: timerRef.current.running,
-      warnMs: timerRef.current.warnMs,
-      negativeMode: timerRef.current.negativeMode,
-      color: timerRef.current.color(),
-      colorInfo,
-      totalMs,
-      sequenceMode: sequence.sequenceMode,
-      currentSequenceIndex: sequence.currentSequenceIndex,
-      totalSequenceTimers: sequence.timerSequence.length,
-      currentTimerName:
-        sequence.sequenceMode && sequence.timerSequence[sequence.currentSequenceIndex]
-          ? sequence.timerSequence[sequence.currentSequenceIndex].name
-          : null,
-      timeConfig: currentTimeConfig,
+    const payload = createDashboardStageStatePayload({
+      timer: timerRef.current,
+      timerInputs: inputs,
+      sequence,
+      timeConfig: timeConfigRef.current,
     });
 
     // Enviar al stage window local
@@ -707,15 +626,14 @@ function App() {
 
   const sendMessage = useStableCallback(async () => {
     if (!message.trim()) return;
-    const ttlMs = persistMsg ? 24 * 60 * 60 * 1000 : Math.max(1000, messageTtl * 1000);
+    const ttlMs = resolveMessageTtlMs({ persist: persistMsg, ttlSeconds: messageTtl });
 
-    const messageData = createStageMessagePayload({
+    const messageData = createDashboardMessagePayload({
       text: message,
       ttlMs,
       fontSize,
       blinking,
       replaceTimer,
-      visible: true,
     });
 
     // Actualizar estado global
@@ -739,15 +657,14 @@ function App() {
   });
 
   const sendPresetMessage = async (presetText) => {
-    const ttlMs = persistMsg ? 24 * 60 * 60 * 1000 : Math.max(1000, messageTtl * 1000);
+    const ttlMs = resolveMessageTtlMs({ persist: persistMsg, ttlSeconds: messageTtl });
 
-    const messageData = createStageMessagePayload({
+    const messageData = createDashboardMessagePayload({
       text: presetText,
       ttlMs,
       fontSize,
       blinking,
       replaceTimer,
-      visible: true,
     });
 
     // Actualizar estado global
@@ -769,19 +686,10 @@ function App() {
   };
 
   // Funciones para la vista previa del stage
-  const getPreviewBackgroundColor = () => {
-    if (blackBackground) return '#000000'; // Fondo negro si está activado
-    if (state.color === 'critical') return '#DC2626'; // Rojo crítico
-    if (state.color === 'warning') return '#EF4444'; // Rojo warning
-    if (state.color === 'caution') return '#F59E0B'; // Naranja/amarillo
-    if (state.color === 'good' || state.color === 'green') return '#059669'; // Verde
-    if (state.color === 'transition') return '#10B981'; // Verde claro
-    return '#1F2937'; // Gris por defecto cuando está detenido
-  };
+  const getPreviewBackgroundColor = () =>
+    resolvePreviewBackgroundColor({ blackBackground, color: state.color });
 
-  const getPreviewTextColor = () => {
-    return '#FFFFFF'; // Siempre blanco para buena legibilidad
-  };
+  const getPreviewTextColor = () => resolvePreviewTextColor();
 
   const hideMessage = useStableCallback(async () => {
     // Limpiar mensaje global
@@ -802,7 +710,7 @@ function App() {
       console.log('Stage window created');
 
       // Wait a bit for window to be ready
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, STAGE_CREATE_READY_DELAY_MS));
 
       // Position the stage window on secondary monitor and make fullscreen
       await stageWindowClient.positionOnSecondaryMonitor();
@@ -820,7 +728,7 @@ function App() {
           console.log('Timer state sent to stage');
 
           // Send current branding to ensure new window has correct branding
-          const brandingData = createStageBrandingPayload({
+          const brandingData = createDashboardBrandingPayload({
             colors: brandColors,
             logo,
             logoSize,
@@ -832,36 +740,26 @@ function App() {
         } catch (error) {
           console.error('Error sending data to stage:', error);
         }
-      }, 800);
+      }, STAGE_SEND_DATA_DELAY_MS);
     } catch (error) {
       console.error('Error opening stage window:', error);
     }
   };
 
-  const handleLocalKeydown = useStableCallback((event) => {
-    if (event.code === 'Space') {
-      event.preventDefault();
-      // Usar el ref para obtener el estado actual del timer
-      if (timerRef.current && timerRef.current.running) {
-        pause();
-      } else {
-        start();
-      }
-    }
-    if (event.key === 's' || event.key === 'S') stop();
-    if (event.key === '+') addMin(1);
-    if (event.key === '-') addMin(-1);
-    if ((event.ctrlKey || event.metaKey) && event.key === '+') addMin(5);
-    if ((event.ctrlKey || event.metaKey) && event.key === '-') addMin(-5);
-    if (event.key === 'm' || event.key === 'M') sendMessage();
-    if (event.key === 'h' || event.key === 'H') hideMessage();
-  });
+  const dashboardKeyboardHandlers = useMemo(
+    () => ({
+      isTimerRunning: () => Boolean(timerRef.current?.running),
+      start,
+      pause,
+      stop,
+      addMin,
+      sendMessage,
+      hideMessage,
+    }),
+    [start, pause, stop, addMin, sendMessage, hideMessage],
+  );
 
-  // hotkeys
-  useEffect(() => {
-    window.addEventListener('keydown', handleLocalKeydown);
-    return () => window.removeEventListener('keydown', handleLocalKeydown);
-  }, [handleLocalKeydown]);
+  useDashboardKeyboardShortcuts(dashboardKeyboardHandlers);
 
   const handleStageRequestInitialData = useStableCallback(async () => {
     // Send current timer state ONLY (no branding to avoid reset)
@@ -870,55 +768,10 @@ function App() {
   });
 
   // Listen for stage window requesting initial data
-  useEffect(() => {
-    const setupStageListener = async () => {
-      try {
-        const { listen } = await import('@tauri-apps/api/event');
-        const unlisten = await listen(
-          STAGE_EVENTS.REQUEST_INITIAL_DATA,
-          handleStageRequestInitialData,
-        );
-        return unlisten;
-      } catch (error) {
-        console.log('Could not setup stage listener:', error);
-        return null;
-      }
-    };
-
-    let unlisten = null;
-    setupStageListener().then((u) => (unlisten = u));
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [handleStageRequestInitialData]);
+  useStageInitialDataRequest(handleStageRequestInitialData);
 
   // Close stage window when dashboard closes
-  useEffect(() => {
-    const closeStageOnExit = async () => {
-      try {
-        const { appWindow } = await import('@tauri-apps/api/window');
-        const unlisten = await appWindow.onCloseRequested(async (_event) => {
-          try {
-            await stageWindowClient.close();
-          } catch (error) {
-            console.log('Could not close stage window:', error);
-          }
-        });
-        return unlisten;
-      } catch (error) {
-        console.log('Could not setup close listener:', error);
-        return null;
-      }
-    };
-
-    let unlisten = null;
-    closeStageOnExit().then((u) => (unlisten = u));
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, []);
+  useCloseStageOnExit(stageWindowClient);
 
   const display = useMemo(() => formatMs(state.remainingMs, true), [state.remainingMs]);
 
@@ -1856,7 +1709,7 @@ function App() {
                     color: getPreviewTextColor(),
                   }}
                 >
-                  {formatTime(state.remainingMs)}
+                  {formatDashboardTime(state.remainingMs)}
                 </div>
 
                 {/* Nombre del Timer */}
