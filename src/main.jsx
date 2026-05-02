@@ -25,7 +25,12 @@ import { HeaderPanel } from './dashboard/components/HeaderPanel';
 import { createBrandingActions } from './dashboard/brandingActions';
 import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
-import { createSequenceTimer, shouldResetSequenceIndexAfterRemoval } from './dashboard/sequence';
+import {
+  createCompletedSequenceState,
+  createSequenceTimer,
+  getNextSequenceStep,
+  shouldResetSequenceIndexAfterRemoval,
+} from './dashboard/sequence';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
 import { useDashboardKeyboardShortcuts } from './dashboard/hooks/useDashboardKeyboardShortcuts';
 import { useGlobalShortcuts } from './dashboard/hooks/useGlobalShortcuts';
@@ -526,15 +531,18 @@ function App() {
 
   const advanceToNextTimer = useStableCallback(() => {
     const sequence = sequenceRef.current;
-    const nextIndex = sequence.currentSequenceIndex + 1;
+    const sequenceStep = getNextSequenceStep({
+      currentSequenceIndex: sequence.currentSequenceIndex,
+      sequenceLength: sequence.timerSequence.length,
+    });
 
-    if (nextIndex < sequence.timerSequence.length) {
+    if (sequenceStep.type === 'next') {
       sequenceRef.current = {
         ...sequence,
-        currentSequenceIndex: nextIndex,
+        currentSequenceIndex: sequenceStep.nextIndex,
       };
-      setCurrentSequenceIndex(nextIndex);
-      loadTimerFromSequence(nextIndex);
+      setCurrentSequenceIndex(sequenceStep.nextIndex);
+      loadTimerFromSequence(sequenceStep.nextIndex);
       // Auto-start el siguiente timer
       setTimeout(() => {
         if (timerRef.current) {
@@ -544,11 +552,7 @@ function App() {
       }, SEQUENCE_AUTOSTART_DELAY_MS);
     } else {
       // Secuencia completada
-      sequenceRef.current = {
-        ...sequence,
-        sequenceMode: false,
-        currentSequenceIndex: 0,
-      };
+      sequenceRef.current = createCompletedSequenceState(sequence);
       setSequenceMode(false);
       setCurrentSequenceIndex(0);
       sendTimerMessage('SECUENCIA COMPLETADA', SEQUENCE_COMPLETED_TTL_MS);

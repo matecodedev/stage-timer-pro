@@ -17,3 +17,21 @@ export function shouldResetSequenceIndexAfterRemoval({
 }) {
   return currentSequenceIndex >= sequenceLengthBeforeRemoval - 1;
 }
+
+export function getNextSequenceStep({ currentSequenceIndex, sequenceLength }) {
+  const nextIndex = currentSequenceIndex + 1;
+
+  if (nextIndex < sequenceLength) {
+    return { type: 'next', nextIndex };
+  }
+
+  return { type: 'completed', nextIndex: 0 };
+}
+
+export function createCompletedSequenceState(sequence) {
+  return {
+    ...sequence,
+    sequenceMode: false,
+    currentSequenceIndex: 0,
+  };
+}

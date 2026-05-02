@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { createSequenceTimer, shouldResetSequenceIndexAfterRemoval } from './sequence.js';
+import {
+  createCompletedSequenceState,
+  createSequenceTimer,
+  getNextSequenceStep,
+  shouldResetSequenceIndexAfterRemoval,
+} from './sequence.js';
 
 describe('dashboard sequence helpers', () => {
   test('creates a sequence timer with trimmed name and total milliseconds', () => {
@@ -40,5 +45,39 @@ describe('dashboard sequence helpers', () => {
         sequenceLengthBeforeRemoval: 1,
       }),
     ).toBe(true);
+  });
+
+  test('returns the next sequence timer step when another timer exists', () => {
+    expect(
+      getNextSequenceStep({
+        currentSequenceIndex: 0,
+        sequenceLength: 2,
+      }),
+    ).toEqual({ type: 'next', nextIndex: 1 });
+  });
+
+  test('returns completed when the current timer is the last in the sequence', () => {
+    expect(
+      getNextSequenceStep({
+        currentSequenceIndex: 1,
+        sequenceLength: 2,
+      }),
+    ).toEqual({ type: 'completed', nextIndex: 0 });
+  });
+
+  test('creates a completed sequence state that disables sequence mode and resets index', () => {
+    expect(
+      createCompletedSequenceState({
+        timerSequence: [{ id: 1 }],
+        currentSequenceIndex: 1,
+        sequenceMode: true,
+        autoAdvance: true,
+      }),
+    ).toEqual({
+      timerSequence: [{ id: 1 }],
+      currentSequenceIndex: 0,
+      sequenceMode: false,
+      autoAdvance: true,
+    });
   });
 });
