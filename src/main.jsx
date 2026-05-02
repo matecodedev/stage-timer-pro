@@ -15,6 +15,10 @@ import { SequenceTimerFormPanel } from './dashboard/components/SequenceTimerForm
 import { AdvancedColorsPanel } from './dashboard/components/AdvancedColorsPanel';
 import { TimerDisplayPanel } from './dashboard/components/TimerDisplayPanel';
 import { MessagePanels } from './dashboard/components/MessagePanels';
+import { BrandingPanel } from './dashboard/components/BrandingPanel';
+import { StagePreviewPanel } from './dashboard/components/StagePreviewPanel';
+import { GlobalShortcutsPanel } from './dashboard/components/GlobalShortcutsPanel';
+import { VideoIntegrationPanel } from './dashboard/components/VideoIntegrationPanel';
 import { CurrentTimePanel } from './dashboard/components/CurrentTimePanel';
 import { InitialTimePanel } from './dashboard/components/InitialTimePanel';
 import { HeaderPanel } from './dashboard/components/HeaderPanel';
@@ -50,12 +54,7 @@ import {
   getPreviewBackgroundColor as resolvePreviewBackgroundColor,
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
-import {
-  calculateTotalMs,
-  createColorThresholds,
-  createTimeConfig,
-  formatDashboardTime,
-} from './dashboard/timeConfig';
+import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
 
 function App() {
   // Estados del timer (ahora con horas, minutos, segundos)
@@ -972,380 +971,34 @@ function App() {
 
         {/* Branding y Herramientas Profesionales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Branding del Evento */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm">🎨</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Branding del Evento</h3>
-            </div>
+          <BrandingPanel
+            logo={logo}
+            setLogo={setLogo}
+            logoSize={logoSize}
+            setLogoSize={setLogoSize}
+            showBranding={showBranding}
+            setShowBranding={setShowBranding}
+            blackBackground={blackBackground}
+            setBlackBackground={setBlackBackground}
+          />
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
-                  URL del Logo
-                </label>
-                <input
-                  value={logo}
-                  onChange={(e) => setLogo(e.target.value)}
-                  placeholder="https://ejemplo.com/logo.png"
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                  <span>💡</span> Recomendado: 200×80px, PNG/JPG
-                </div>
-              </div>
+          <StagePreviewPanel
+            state={state}
+            timerSequence={timerSequence}
+            logo={logo}
+            logoSize={logoSize}
+            showBranding={showBranding}
+            getPreviewBackgroundColor={getPreviewBackgroundColor}
+            getPreviewTextColor={getPreviewTextColor}
+          />
 
-              <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
-                  Tamaño del Logo (px)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="24"
-                    max="120"
-                    value={logoSize}
-                    onChange={(e) => {
-                      const newSize = Number(e.target.value);
-                      console.log('🎛️ SLIDER CHANGED TO:', newSize);
-                      setLogoSize(newSize);
-                    }}
-                    className="flex-1"
-                  />
-                  <input
-                    type="number"
-                    min="24"
-                    max="120"
-                    value={logoSize}
-                    onChange={(e) => {
-                      const newSize = Math.max(24, Math.min(120, Number(e.target.value)));
-                      console.log('🔢 INPUT CHANGED TO:', newSize);
-                      setLogoSize(newSize);
-                    }}
-                    className="w-16 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-700 dark:text-white"
-                  />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">px</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={showBranding}
-                    onChange={(e) => setShowBranding(e.target.checked)}
-                    className="w-4 h-4 text-purple-600 rounded"
-                  />
-                  <span className="text-gray-600 dark:text-gray-300">Mostrar logo</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={blackBackground}
-                    onChange={(e) => setBlackBackground(e.target.checked)}
-                    className="w-4 h-4 text-purple-600 rounded"
-                  />
-                  <span className="text-gray-600 dark:text-gray-300">Fondo negro</span>
-                </label>
-              </div>
-
-              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  <span className="font-medium text-purple-600 dark:text-purple-400">
-                    ℹ️ Información:
-                  </span>{' '}
-                  Los colores del stage se configuran automáticamente según el estado del timer
-                  (verde, amarillo, rojo).
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Vista Previa del Stage */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm">👁️</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Vista Previa del Stage
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              {/* Simulación del Stage en miniatura */}
-              <div
-                className="relative border border-gray-300 dark:border-gray-600 rounded-lg aspect-video flex flex-col items-center justify-center text-center overflow-hidden"
-                style={{
-                  minHeight: '200px',
-                  backgroundColor: getPreviewBackgroundColor(),
-                }}
-              >
-                {/* Timer Principal */}
-                <div
-                  className="text-4xl font-mono font-bold mb-2"
-                  style={{
-                    color: getPreviewTextColor(),
-                  }}
-                >
-                  {formatDashboardTime(state.remainingMs)}
-                </div>
-
-                {/* Nombre del Timer */}
-                {state.currentTimerName && (
-                  <div
-                    className="text-lg font-medium mb-2 opacity-80"
-                    style={{
-                      color: getPreviewTextColor(),
-                    }}
-                  >
-                    {state.currentTimerName}
-                  </div>
-                )}
-
-                {/* Mensaje si existe */}
-                {state.messageShown && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <div
-                      className="text-xl font-bold text-center px-4 text-white"
-                      style={{
-                        fontSize: Math.min(24, (state.messageFontSize || 200) * 0.1) + 'px',
-                      }}
-                    >
-                      {state.messageText}
-                    </div>
-                  </div>
-                )}
-
-                {/* Logo si está configurado - centrado como en el stage */}
-                {logo && showBranding && (
-                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
-                    <img
-                      src={logo}
-                      alt="Logo"
-                      className="w-auto object-contain opacity-80"
-                      style={{ height: logoSize * 0.67 + 'px' }} // Escalado para vista previa
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Branding matecode - SIEMPRE VISIBLE */}
-                <div
-                  className="absolute bottom-2 right-2 text-xs opacity-60"
-                  style={{
-                    color: getPreviewTextColor(),
-                  }}
-                >
-                  Hecho con ♥ por MateCode
-                </div>
-
-                {/* Barra de progreso */}
-                <div className="absolute bottom-0 left-0 h-1 bg-black bg-opacity-30 w-full">
-                  <div
-                    className="h-full transition-all duration-1000"
-                    style={{
-                      width: `${Math.max(0, Math.min(100, ((state.totalMs - state.remainingMs) / state.totalMs) * 100))}%`,
-                      backgroundColor: getPreviewTextColor(),
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Información del estado actual */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                  <div className="font-medium text-gray-600 dark:text-gray-300">Estado</div>
-                  <div className="text-gray-800 dark:text-gray-200 capitalize">
-                    {state.color || 'Detenido'}
-                  </div>
-                </div>
-                <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                  <div className="font-medium text-gray-600 dark:text-gray-300">Progreso</div>
-                  <div className="text-gray-800 dark:text-gray-200">
-                    {Math.round(((state.totalMs - state.remainingMs) / state.totalMs) * 100 || 0)}%
-                  </div>
-                </div>
-                <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                  <div className="font-medium text-gray-600 dark:text-gray-300">Secuencia</div>
-                  <div className="text-gray-800 dark:text-gray-200">
-                    {state.currentSequenceIndex !== null
-                      ? `${state.currentSequenceIndex + 1}/${timerSequence.length}`
-                      : 'Individual'}
-                  </div>
-                </div>
-                <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                  <div className="font-medium text-gray-600 dark:text-gray-300">Mensaje</div>
-                  <div className="text-gray-800 dark:text-gray-200">
-                    {state.messageShown ? 'Visible' : 'Oculto'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="text-xs text-blue-700 dark:text-blue-300">
-                  <span className="font-medium">🔄 Actualización en tiempo real:</span> Esta vista
-                  previa refleja exactamente lo que se muestra en el Stage.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Atajos Globales */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm">⚡</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Atajos Globales</h3>
-            </div>
-
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600">
-                  ⌘+Shift+Space
-                </code>
-                <span className="text-xs text-gray-600 dark:text-gray-300">Start/Pause</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600">
-                  ⌘+Shift+R
-                </code>
-                <span className="text-xs text-gray-600 dark:text-gray-300">Reset Timer</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs border border-gray-200 dark:border-gray-600">
-                  ⌘+Shift+F
-                </code>
-                <span className="text-xs text-gray-600 dark:text-gray-300">Toggle Fullscreen</span>
-              </div>
-            </div>
-
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="text-xs text-green-700 dark:text-green-300 flex items-center gap-1">
-                <span>✅</span> Activos desde cualquier aplicación
-              </div>
-            </div>
-          </div>
+          <GlobalShortcutsPanel />
         </div>
 
-        {/* Integración con Software de Video */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm">🎥</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              Integración con Software de Video
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Configuración de Captura */}
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                Configurar Stage para Captura
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onClick={() => setStageForCapture(1920, 1080)}
-                  variant="primary"
-                  className="text-xs py-2"
-                >
-                  📺 1920×1080
-                </Button>
-                <Button
-                  onClick={() => setStageForCapture(1280, 720)}
-                  variant="primary"
-                  className="text-xs py-2"
-                >
-                  📺 1280×720
-                </Button>
-                <Button
-                  onClick={() => setStageForCapture(1024, 768)}
-                  variant="primary"
-                  className="text-xs py-2"
-                >
-                  📺 1024×768
-                </Button>
-                <Button
-                  onClick={() => resetStageWindow()}
-                  variant="warning"
-                  className="text-xs py-2"
-                >
-                  🔄 Reset
-                </Button>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => window.open('https://obsproject.com/', '_blank')}
-                  variant="default"
-                  className="text-xs flex-1 py-2"
-                >
-                  📥 OBS Studio
-                </Button>
-                <Button
-                  onClick={() => window.open('https://ndi.video/tools/', '_blank')}
-                  variant="default"
-                  className="text-xs flex-1 py-2"
-                >
-                  📥 NDI Tools
-                </Button>
-              </div>
-            </div>
-
-            {/* Métodos de Integración */}
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                Métodos de Integración
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                  <div className="font-medium text-blue-800 dark:text-blue-300 mb-1">
-                    🥇 NDI (Recomendado)
-                  </div>
-                  <div className="text-blue-700 dark:text-blue-400">
-                    Calidad profesional • Sin lag • Fácil setup
-                  </div>
-                </div>
-
-                <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                  <div className="font-medium text-green-800 dark:text-green-300 mb-1">
-                    🥈 OBS Virtual Camera
-                  </div>
-                  <div className="text-green-700 dark:text-green-400">
-                    Gratis • Compatible con todo • Fácil
-                  </div>
-                </div>
-
-                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
-                  <div className="font-medium text-orange-800 dark:text-orange-300 mb-1">
-                    🥉 Captura Directa
-                  </div>
-                  <div className="text-orange-700 dark:text-orange-400">
-                    Básico • Mayor uso de CPU
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
-                <div className="text-xs text-purple-700 dark:text-purple-300">
-                  💡 <strong>Tip:</strong> Usa fondo negro para mejor chromakey
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <VideoIntegrationPanel
+          setStageForCapture={setStageForCapture}
+          resetStageWindow={resetStageWindow}
+        />
       </div>
     </div>
   );
