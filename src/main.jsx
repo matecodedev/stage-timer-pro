@@ -489,11 +489,7 @@ function App() {
   };
 
   const stopSequence = () => {
-    sequenceRef.current = {
-      ...sequenceRef.current,
-      sequenceMode: false,
-      currentSequenceIndex: 0,
-    };
+    sequenceRef.current = createCompletedSequenceState(sequenceRef.current);
     setSequenceMode(false);
     setCurrentSequenceIndex(0);
     stop();
