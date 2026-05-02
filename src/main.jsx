@@ -22,6 +22,7 @@ import { SequencePanel } from './dashboard/components/SequencePanel';
 import { CurrentTimePanel } from './dashboard/components/CurrentTimePanel';
 import { InitialTimePanel } from './dashboard/components/InitialTimePanel';
 import { HeaderPanel } from './dashboard/components/HeaderPanel';
+import { createBrandingActions } from './dashboard/brandingActions';
 import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
 import { createSequenceTimer, shouldResetSequenceIndexAfterRemoval } from './dashboard/sequence';
@@ -151,6 +152,14 @@ function App() {
     setStageForCapture,
     resetStageWindow,
   } = useMemo(() => createNativeActions({ runTauriCommand }), [runTauriCommand]);
+  const brandingActions = useMemo(
+    () =>
+      createBrandingActions({
+        stageWindowClient,
+        setCurrentGlobalBranding,
+      }),
+    [],
+  );
 
   // instanciar timer al montar
   useEffect(() => {
@@ -208,31 +217,14 @@ function App() {
 
   // Efecto para actualizar branding automáticamente - MÁS SIMPLE
   useEffect(() => {
-    const updateBrandingNow = async () => {
-      const brandingData = createDashboardBrandingPayload({
-        colors: brandColors,
-        logo,
-        logoSize,
-        blackBackground,
-        showBranding,
-      });
-
-      console.log('🔄 Updating branding immediately:', { logoSize, blackBackground, showBranding });
-
-      // Actualizar estado global
-      setCurrentGlobalBranding(brandingData);
-
-      // Enviar al stage inmediatamente
-      try {
-        await stageWindowClient.emitBranding(brandingData);
-        console.log('✅ Branding sent successfully');
-      } catch (err) {
-        console.error('❌ Error sending branding:', err);
-      }
-    };
-
-    updateBrandingNow();
-  }, [brandColors, logo, logoSize, blackBackground, showBranding]);
+    brandingActions.updateBranding({
+      colors: brandColors,
+      logo,
+      logoSize,
+      blackBackground,
+      showBranding,
+    });
+  }, [brandingActions, brandColors, logo, logoSize, blackBackground, showBranding]);
 
   // aplicar tiempo inicial
   const applyInitial = useStableCallback(() => {
