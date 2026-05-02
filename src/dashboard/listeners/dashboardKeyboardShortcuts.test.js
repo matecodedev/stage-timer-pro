@@ -86,4 +86,34 @@ describe('registerDashboardKeyboardShortcuts', () => {
     expect(handlers.addMin).toHaveBeenNthCalledWith(3, -1);
     expect(handlers.addMin).toHaveBeenNthCalledWith(4, -5);
   });
+
+  test('ignores dashboard shortcuts while typing in editable fields', () => {
+    const target = createTarget();
+    const handlers = createHandlers();
+
+    registerDashboardKeyboardShortcuts({ target, handlers });
+    target.dispatch('keydown', {
+      code: 'KeyM',
+      key: 'm',
+      target: { tagName: 'INPUT' },
+      preventDefault: vi.fn(),
+    });
+    target.dispatch('keydown', {
+      code: 'KeyH',
+      key: 'h',
+      target: { tagName: 'TEXTAREA' },
+      preventDefault: vi.fn(),
+    });
+    target.dispatch('keydown', {
+      code: 'Space',
+      key: ' ',
+      target: { isContentEditable: true },
+      preventDefault: vi.fn(),
+    });
+
+    expect(handlers.sendMessage).not.toHaveBeenCalled();
+    expect(handlers.hideMessage).not.toHaveBeenCalled();
+    expect(handlers.start).not.toHaveBeenCalled();
+    expect(handlers.pause).not.toHaveBeenCalled();
+  });
 });

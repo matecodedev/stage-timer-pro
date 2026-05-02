@@ -1,5 +1,7 @@
 export function registerDashboardKeyboardShortcuts({ target = window, handlers }) {
   const onKeydown = (event) => {
+    if (isEditableTarget(event.target)) return;
+
     if (event.code === 'Space') {
       event.preventDefault();
       if (handlers.isTimerRunning()) {
@@ -20,4 +22,12 @@ export function registerDashboardKeyboardShortcuts({ target = window, handlers }
 
   target.addEventListener('keydown', onKeydown);
   return () => target.removeEventListener('keydown', onKeydown);
+}
+
+function isEditableTarget(target) {
+  if (!target) return false;
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName?.toUpperCase();
+  return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
 }
