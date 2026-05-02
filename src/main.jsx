@@ -24,6 +24,7 @@ import { InitialTimePanel } from './dashboard/components/InitialTimePanel';
 import { HeaderPanel } from './dashboard/components/HeaderPanel';
 import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
+import { createSequenceTimer, shouldResetSequenceIndexAfterRemoval } from './dashboard/sequence';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
 import { useDashboardKeyboardShortcuts } from './dashboard/hooks/useDashboardKeyboardShortcuts';
 import { useGlobalShortcuts } from './dashboard/hooks/useGlobalShortcuts';
@@ -470,18 +471,13 @@ function App() {
   const addTimerToSequence = () => {
     if (!newTimerName.trim()) return;
 
-    const newTimer = {
+    const newTimer = createSequenceTimer({
       id: Date.now(),
-      name: newTimerName.trim(),
+      name: newTimerName,
       hours: newTimerHours,
       minutes: newTimerMinutes,
       seconds: newTimerSeconds,
-      totalMs: calculateTotalMs({
-        hours: newTimerHours,
-        minutes: newTimerMinutes,
-        seconds: newTimerSeconds,
-      }),
-    };
+    });
 
     setTimerSequence((prev) => [...prev, newTimer]);
     setNewTimerName('');
@@ -492,7 +488,12 @@ function App() {
 
   const removeTimerFromSequence = (id) => {
     setTimerSequence((prev) => prev.filter((timer) => timer.id !== id));
-    if (currentSequenceIndex >= timerSequence.length - 1) {
+    if (
+      shouldResetSequenceIndexAfterRemoval({
+        currentSequenceIndex,
+        sequenceLengthBeforeRemoval: timerSequence.length,
+      })
+    ) {
       setCurrentSequenceIndex(0);
     }
   };
