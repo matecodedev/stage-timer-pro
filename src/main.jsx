@@ -34,6 +34,7 @@ import {
   createStartedSequenceState,
   getDefaultSequenceTimerInputs,
   getNextSequenceStep,
+  scheduleSequenceTimerAutostart,
   shouldResetSequenceIndexAfterRemoval,
 } from './dashboard/sequence';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
@@ -541,12 +542,11 @@ function App() {
       setCurrentSequenceIndex(sequenceStep.nextIndex);
       loadTimerFromSequence(sequenceStep.nextIndex);
       // Auto-start el siguiente timer
-      setTimeout(() => {
-        if (timerRef.current) {
-          timerRef.current.start();
-          pushStageState();
-        }
-      }, SEQUENCE_AUTOSTART_DELAY_MS);
+      scheduleSequenceTimerAutostart({
+        timerRef,
+        pushStageState,
+        delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
+      });
     } else {
       // Secuencia completada
       sequenceRef.current = createCompletedSequenceState(sequence);
@@ -566,12 +566,11 @@ function App() {
 
     // Si estaba corriendo, continuar con el nuevo timer
     if (stateRef.current.running) {
-      setTimeout(() => {
-        if (timerRef.current) {
-          timerRef.current.start();
-          pushStageState();
-        }
-      }, SEQUENCE_AUTOSTART_DELAY_MS);
+      scheduleSequenceTimerAutostart({
+        timerRef,
+        pushStageState,
+        delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
+      });
     }
   };
 

@@ -72,3 +72,12 @@ export function createLoadedSequenceTimerState(timer) {
 export function getDefaultSequenceTimerInputs() {
   return { ...DEFAULT_SEQUENCE_TIMER_INPUTS };
 }
+
+export function scheduleSequenceTimerAutostart({ timerRef, pushStageState, delayMs }) {
+  setTimeout(() => {
+    if (!timerRef.current) return;
+
+    timerRef.current.start();
+    pushStageState();
+  }, delayMs);
+}

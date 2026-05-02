@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
   createCompletedSequenceState,
   createLoadedSequenceTimerInputs,
@@ -8,6 +8,7 @@ import {
   createSequenceTimer,
   getDefaultSequenceTimerInputs,
   getNextSequenceStep,
+  scheduleSequenceTimerAutostart,
   shouldResetSequenceIndexAfterRemoval,
 } from './sequence.js';
 
@@ -161,5 +162,36 @@ describe('dashboard sequence helpers', () => {
       minutes: 5,
       seconds: 0,
     });
+  });
+
+  test('schedules sequence timer autostart and pushes stage state', () => {
+    vi.useFakeTimers();
+    const timer = { start: vi.fn() };
+    const timerRef = { current: timer };
+    const pushStageState = vi.fn();
+
+    scheduleSequenceTimerAutostart({ timerRef, pushStageState, delayMs: 100 });
+    expect(timer.start).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(100);
+
+    expect(timer.start).toHaveBeenCalledTimes(1);
+    expect(pushStageState).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  test('skips sequence timer autostart when the timer ref is empty', () => {
+    vi.useFakeTimers();
+    const pushStageState = vi.fn();
+
+    scheduleSequenceTimerAutostart({
+      timerRef: { current: null },
+      pushStageState,
+      delayMs: 100,
+    });
+    vi.advanceTimersByTime(100);
+
+    expect(pushStageState).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });
