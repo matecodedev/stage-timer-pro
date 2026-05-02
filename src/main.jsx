@@ -11,6 +11,10 @@ import { Button } from './dashboard/components/Button';
 import { SettingsPanel } from './dashboard/components/SettingsPanel';
 import { ControlsPanel } from './dashboard/components/ControlsPanel';
 import { StageDisplayPanel } from './dashboard/components/StageDisplayPanel';
+import { SequenceTimerFormPanel } from './dashboard/components/SequenceTimerFormPanel';
+import { AdvancedColorsPanel } from './dashboard/components/AdvancedColorsPanel';
+import { TimerDisplayPanel } from './dashboard/components/TimerDisplayPanel';
+import { MessagePanels } from './dashboard/components/MessagePanels';
 import { CurrentTimePanel } from './dashboard/components/CurrentTimePanel';
 import { InitialTimePanel } from './dashboard/components/InitialTimePanel';
 import { HeaderPanel } from './dashboard/components/HeaderPanel';
@@ -913,311 +917,24 @@ function App() {
           />
         </div>
 
-        {/* Agregar Timer a Secuencia */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-            ➕ Agregar Timer a Secuencia
-          </h3>
-          <div className="grid grid-cols-5 gap-3">
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300">Nombre del Timer</label>
-              <input
-                type="text"
-                value={newTimerName}
-                onChange={(e) => setNewTimerName(e.target.value)}
-                placeholder="ej: Introducción"
-                className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300">Horas</label>
-              <input
-                type="number"
-                value={newTimerHours}
-                onChange={(e) => setNewTimerHours(Math.max(0, +e.target.value || 0))}
-                className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300">Minutos</label>
-              <input
-                type="number"
-                value={newTimerMinutes}
-                onChange={(e) =>
-                  setNewTimerMinutes(Math.max(0, Math.min(59, +e.target.value || 0)))
-                }
-                className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                max="59"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300">Segundos</label>
-              <input
-                type="number"
-                value={newTimerSeconds}
-                onChange={(e) =>
-                  setNewTimerSeconds(Math.max(0, Math.min(59, +e.target.value || 0)))
-                }
-                className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                max="59"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={addTimerToSequence}
-                variant="success"
-                className="w-full"
-                disabled={!newTimerName.trim()}
-              >
-                ➕ Agregar
-              </Button>
-            </div>
-          </div>
+        <SequenceTimerFormPanel
+          newTimerName={newTimerName}
+          setNewTimerName={setNewTimerName}
+          newTimerHours={newTimerHours}
+          setNewTimerHours={setNewTimerHours}
+          newTimerMinutes={newTimerMinutes}
+          setNewTimerMinutes={setNewTimerMinutes}
+          newTimerSeconds={newTimerSeconds}
+          setNewTimerSeconds={setNewTimerSeconds}
+          addTimerToSequence={addTimerToSequence}
+        />
 
-          {/* Plantillas rápidas */}
-          <div className="mt-3 pt-3 border-t dark:border-gray-700">
-            <div className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-              🎯 Plantillas Rápidas:
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                onClick={() => {
-                  setNewTimerName('Introducción');
-                  setNewTimerMinutes(5);
-                  setNewTimerSeconds(0);
-                }}
-                variant="default"
-                className="text-xs"
-              >
-                📢 Introducción (5m)
-              </Button>
-              <Button
-                onClick={() => {
-                  setNewTimerName('Presentación');
-                  setNewTimerMinutes(15);
-                  setNewTimerSeconds(0);
-                }}
-                variant="default"
-                className="text-xs"
-              >
-                🎤 Presentación (15m)
-              </Button>
-              <Button
-                onClick={() => {
-                  setNewTimerName('Q&A');
-                  setNewTimerMinutes(10);
-                  setNewTimerSeconds(0);
-                }}
-                variant="default"
-                className="text-xs"
-              >
-                ❓ Q&A (10m)
-              </Button>
-              <Button
-                onClick={() => {
-                  setNewTimerName('Descanso');
-                  setNewTimerMinutes(15);
-                  setNewTimerSeconds(0);
-                }}
-                variant="default"
-                className="text-xs"
-              >
-                ☕ Descanso (15m)
-              </Button>
-              <Button
-                onClick={() => {
-                  setNewTimerName('Cierre');
-                  setNewTimerMinutes(5);
-                  setNewTimerSeconds(0);
-                }}
-                variant="default"
-                className="text-xs"
-              >
-                🎯 Cierre (5m)
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Configuración Avanzada de Colores */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              🎨 Colores Avanzados del Timer
-            </h3>
-            <div className="flex items-center gap-2">
-              <input
-                id="enableAdvancedColors"
-                type="checkbox"
-                checked={enableAdvancedColors}
-                onChange={(e) => setEnableAdvancedColors(e.target.checked)}
-                className="text-blue-500"
-              />
-              <label
-                htmlFor="enableAdvancedColors"
-                className="text-xs text-gray-600 dark:text-gray-300"
-              >
-                Activar colores avanzados
-              </label>
-            </div>
-          </div>
-
-          {enableAdvancedColors && (
-            <>
-              <div className="grid grid-cols-4 gap-4 mb-4">
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    🔴 Crítico (min)
-                  </label>
-                  <input
-                    type="number"
-                    value={colorThresholds.critical}
-                    onChange={(e) =>
-                      setColorThresholds((prev) => ({
-                        ...prev,
-                        critical: Math.max(0, +e.target.value || 0),
-                      }))
-                    }
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    min="0"
-                  />
-                  <div className="text-xs text-gray-400 mt-1">Últimos minutos</div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    🟠 Alerta (min)
-                  </label>
-                  <input
-                    type="number"
-                    value={colorThresholds.warning}
-                    onChange={(e) =>
-                      setColorThresholds((prev) => ({
-                        ...prev,
-                        warning: Math.max(0, +e.target.value || 0),
-                      }))
-                    }
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    min="0"
-                  />
-                  <div className="text-xs text-gray-400 mt-1">Tiempo de alerta</div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    🟡 Precaución (min)
-                  </label>
-                  <input
-                    type="number"
-                    value={colorThresholds.caution}
-                    onChange={(e) =>
-                      setColorThresholds((prev) => ({
-                        ...prev,
-                        caution: Math.max(0, +e.target.value || 0),
-                      }))
-                    }
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    min="0"
-                  />
-                  <div className="text-xs text-gray-400 mt-1">Tiempo de atención</div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    🟢 Bueno (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={colorThresholds.good}
-                    onChange={(e) =>
-                      setColorThresholds((prev) => ({
-                        ...prev,
-                        good: Math.max(0, Math.min(100, +e.target.value || 0)),
-                      }))
-                    }
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    min="0"
-                    max="100"
-                  />
-                  <div className="text-xs text-gray-400 mt-1">% tiempo restante</div>
-                </div>
-              </div>
-
-              {/* Vista previa de colores */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                <div className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-                  Vista previa de estados:
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: '#059669' }}></div>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">
-                      Bueno (&gt;{colorThresholds.good}%)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">Transición</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">
-                      Precaución ({colorThresholds.caution}m)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EF4444' }}></div>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">
-                      Alerta ({colorThresholds.warning}m)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: '#DC2626' }}></div>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">
-                      Crítico ({colorThresholds.critical}m)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botones de presets */}
-              <div className="mt-3 pt-3 border-t dark:border-gray-600">
-                <div className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-                  Presets rápidos:
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    onClick={() =>
-                      setColorThresholds({ critical: 1, warning: 3, caution: 5, good: 50 })
-                    }
-                    variant="default"
-                    className="text-xs"
-                  >
-                    🚀 Presentación Rápida
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      setColorThresholds({ critical: 2, warning: 5, caution: 10, good: 25 })
-                    }
-                    variant="default"
-                    className="text-xs"
-                  >
-                    📋 Conferencia Estándar
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      setColorThresholds({ critical: 5, warning: 15, caution: 30, good: 20 })
-                    }
-                    variant="default"
-                    className="text-xs"
-                  >
-                    🎓 Evento Largo
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        <AdvancedColorsPanel
+          enableAdvancedColors={enableAdvancedColors}
+          setEnableAdvancedColors={setEnableAdvancedColors}
+          colorThresholds={colorThresholds}
+          setColorThresholds={setColorThresholds}
+        />
 
         {/* Configuración de Hora Actual */}
         <CurrentTimePanel
@@ -1232,184 +949,26 @@ function App() {
           brandColors={brandColors}
         />
 
-        {/* Display del reloj */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                ⏱️ Tiempo Restante
-              </div>
-              <div className="text-5xl font-mono font-bold text-gray-900 dark:text-white">
-                {display}
-              </div>
-            </div>
-            <span
-              className={`px-4 py-2 rounded-lg text-sm font-semibold border flex items-center gap-2 ${
-                state.color === 'green' &&
-                'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200 dark:border-green-700'
-              } ${
-                state.color === 'yellow' &&
-                'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700'
-              } ${
-                state.color === 'red' &&
-                'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-200 dark:border-red-700'
-              } ${
-                (state.color === 'critical' || state.color === 'warning') &&
-                'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-200 dark:border-red-700'
-              } ${
-                state.color === 'caution' &&
-                'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700'
-              } ${
-                (state.color === 'transition' || state.color === 'good') &&
-                'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200 dark:border-green-700'
-              }`}
-            >
-              {state.colorInfo ? (
-                <>
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: state.colorInfo.bgColor }}
-                  />
-                  <div>
-                    <div>{state.colorInfo.name}</div>
-                    <div className="text-xs opacity-70">{state.colorInfo.remainingPercent}%</div>
-                  </div>
-                </>
-              ) : (
-                state.color.toUpperCase()
-              )}
-            </span>
-          </div>
-        </div>
+        <TimerDisplayPanel display={display} state={state} />
 
-        {/* Mensajes y Comunicación */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Mensaje personalizado */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm">💬</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Mensaje Personalizado</h3>
-            </div>
-
-            <div className="space-y-3">
-              <input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Escribe tu mensaje..."
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              />
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
-                    Tamaño
-                  </label>
-                  <input
-                    type="number"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(Math.max(12, +e.target.value || 200))}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white"
-                    min="12"
-                    placeholder="200px"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
-                    Duración
-                  </label>
-                  <input
-                    type="number"
-                    value={messageTtl}
-                    onChange={(e) => setMessageTtl(+e.target.value || 0)}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white"
-                    placeholder="5s"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
-                    Opciones
-                  </label>
-                  <div className="space-y-1">
-                    <label className="flex items-center gap-1.5 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={blinking}
-                        onChange={(e) => setBlinking(e.target.checked)}
-                        className="w-3 h-3 text-blue-600 rounded"
-                      />
-                      <span className="text-gray-600 dark:text-gray-300">Titila</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={replaceTimer}
-                        onChange={(e) => setReplaceTimer(e.target.checked)}
-                        className="w-3 h-3 text-blue-600 rounded"
-                      />
-                      <span className="text-gray-600 dark:text-gray-300">Reemplaza timer</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={persistMsg}
-                  onChange={(e) => setPersistMsg(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-gray-600 dark:text-gray-300">
-                  Mantener hasta ocultar manualmente
-                </span>
-              </label>
-
-              <div className="flex gap-2">
-                <Button onClick={sendMessage} variant="primary" className="flex-1 text-sm py-2">
-                  📤 Enviar
-                </Button>
-                <Button onClick={hideMessage} variant="danger" className="flex-1 text-sm py-2">
-                  🚫 Ocultar
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mensajes predefinidos */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm">⚡</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Mensajes Predefinidos</h3>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {presetMessages.map((preset, index) => (
-                <Button
-                  key={index}
-                  onClick={() => sendPresetMessage(preset)}
-                  variant="default"
-                  className="text-xs py-2 px-3 hover:scale-105 transition-transform"
-                >
-                  {preset}
-                </Button>
-              ))}
-            </div>
-
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-blue-600 dark:text-blue-400">
-                  💡 Configuración:
-                </span>{' '}
-                Los mensajes usan el tamaño, titilación y duración actuales.
-              </div>
-            </div>
-          </div>
-        </div>
+        <MessagePanels
+          message={message}
+          setMessage={setMessage}
+          messageTtl={messageTtl}
+          setMessageTtl={setMessageTtl}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          blinking={blinking}
+          setBlinking={setBlinking}
+          replaceTimer={replaceTimer}
+          setReplaceTimer={setReplaceTimer}
+          persistMsg={persistMsg}
+          setPersistMsg={setPersistMsg}
+          sendMessage={sendMessage}
+          hideMessage={hideMessage}
+          presetMessages={presetMessages}
+          sendPresetMessage={sendPresetMessage}
+        />
 
         {/* Branding y Herramientas Profesionales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
