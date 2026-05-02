@@ -7,6 +7,12 @@ import { Countdown, formatMs } from './timer';
 import { invoke } from '@tauri-apps/api';
 import { stageWindowClient } from './infrastructure/tauri/stageWindowClient';
 import { Button } from './dashboard/components/Button';
+import { SettingsPanel } from './dashboard/components/SettingsPanel';
+import { ControlsPanel } from './dashboard/components/ControlsPanel';
+import { StageDisplayPanel } from './dashboard/components/StageDisplayPanel';
+import { CurrentTimePanel } from './dashboard/components/CurrentTimePanel';
+import { InitialTimePanel } from './dashboard/components/InitialTimePanel';
+import { HeaderPanel } from './dashboard/components/HeaderPanel';
 import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
@@ -778,59 +784,18 @@ function App() {
   return (
     <div className="min-h-screen transition-colors dark bg-gray-900">
       <div className="p-4 max-w-6xl mx-auto space-y-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              ⏱️ Stage Timer Dashboard
-            </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Control profesional de tiempo para presentaciones y eventos
-            </p>
-          </div>
-        </div>
+        <HeaderPanel />
 
         <div className="grid grid-cols-5 gap-4">
-          {/* Tiempo inicial */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">⏰ Tiempo Inicial</h3>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="text-xs text-gray-600 dark:text-gray-300">Horas</label>
-                <input
-                  type="number"
-                  value={hours}
-                  onChange={(e) => setHours(Math.max(0, +e.target.value || 0))}
-                  className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600 dark:text-gray-300">Min</label>
-                <input
-                  type="number"
-                  value={minutes}
-                  onChange={(e) => setMinutes(Math.max(0, Math.min(59, +e.target.value || 0)))}
-                  className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  min="0"
-                  max="59"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600 dark:text-gray-300">Seg</label>
-                <input
-                  type="number"
-                  value={seconds}
-                  onChange={(e) => setSeconds(Math.max(0, Math.min(59, +e.target.value || 0)))}
-                  className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  min="0"
-                  max="59"
-                />
-              </div>
-            </div>
-            <Button onClick={applyInitial} variant="primary" className="w-full">
-              Aplicar Tiempo
-            </Button>
-          </div>
+          <InitialTimePanel
+            hours={hours}
+            setHours={setHours}
+            minutes={minutes}
+            setMinutes={setMinutes}
+            seconds={seconds}
+            setSeconds={setSeconds}
+            applyInitial={applyInitial}
+          />
 
           {/* Timers Secuenciales */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3">
@@ -925,77 +890,13 @@ function App() {
           </div>
 
           {/* Configuración */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">⚙️ Configuración</h3>
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300">Warning (min)</label>
-              <input
-                type="number"
-                value={warn}
-                onChange={(e) => setWarnMin(+e.target.value || 0)}
-                className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="neg"
-                type="checkbox"
-                checked={neg}
-                onChange={toggleNeg}
-                className="text-blue-500"
-              />
-              <label htmlFor="neg" className="text-xs text-gray-600 dark:text-gray-300">
-                Contar en negativo
-              </label>
-            </div>
-          </div>
+          <SettingsPanel warn={warn} setWarnMin={setWarnMin} neg={neg} toggleNeg={toggleNeg} />
 
           {/* Controles */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">🎮 Controles</h3>
-            <div className="flex gap-2">
-              <Button onClick={start} variant="success" className="flex-1 text-xs">
-                ▶️ Start
-              </Button>
-              <Button onClick={pause} variant="warning" className="flex-1 text-xs">
-                ⏸️ Pause
-              </Button>
-              <Button onClick={stop} variant="danger" className="flex-1 text-xs">
-                ⏹️ Stop
-              </Button>
-            </div>
-            <div className="grid grid-cols-3 gap-1">
-              <Button onClick={() => addMin(1)} className="text-xs">
-                +1m
-              </Button>
-              <Button onClick={() => addMin(5)} className="text-xs">
-                +5m
-              </Button>
-              <Button onClick={() => addMin(10)} className="text-xs">
-                +10m
-              </Button>
-              <Button onClick={() => addMin(-1)} className="text-xs">
-                -1m
-              </Button>
-              <Button onClick={() => addMin(-5)} className="text-xs">
-                -5m
-              </Button>
-              <Button onClick={() => addMin(-10)} className="text-xs">
-                -10m
-              </Button>
-            </div>
-          </div>
+          <ControlsPanel start={start} pause={pause} stop={stop} addMin={addMin} />
 
           {/* Stage */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">🎬 Stage Display</h3>
-            <Button onClick={openFullscreen} variant="primary" className="w-full">
-              🖥️ Abrir Stage Fullscreen
-            </Button>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              ⌨️ Atajos: Space (▶️/⏸️), S (⏹️), +/− (±1m), D (🌙/☀️)
-            </div>
-          </div>
+          <StageDisplayPanel openFullscreen={openFullscreen} />
         </div>
 
         {/* Agregar Timer a Secuencia */}
@@ -1305,109 +1206,17 @@ function App() {
         </div>
 
         {/* Configuración de Hora Actual */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              🕒 Display de Hora Actual
-            </h3>
-            <div className="flex items-center gap-2">
-              <input
-                id="showCurrentTime"
-                type="checkbox"
-                checked={showCurrentTime}
-                onChange={(e) => setShowCurrentTime(e.target.checked)}
-                className="text-blue-500"
-              />
-              <label htmlFor="showCurrentTime" className="text-xs text-gray-600 dark:text-gray-300">
-                Mostrar hora actual
-              </label>
-            </div>
-          </div>
-
-          {showCurrentTime && (
-            <>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    🕐 Formato de Hora
-                  </label>
-                  <select
-                    value={timeFormat24h ? '24h' : '12h'}
-                    onChange={(e) => setTimeFormat24h(e.target.value === '24h')}
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  >
-                    <option value="24h">24 horas (14:30)</option>
-                    <option value="12h">12 horas (2:30 PM)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    ⏰ Mostrar Segundos
-                  </label>
-                  <select
-                    value={showSeconds ? 'yes' : 'no'}
-                    onChange={(e) => setShowSeconds(e.target.value === 'yes')}
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  >
-                    <option value="yes">Sí (14:30:45)</option>
-                    <option value="no">No (14:30)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                    📍 Posición en Stage
-                  </label>
-                  <select
-                    value={timePosition}
-                    onChange={(e) => setTimePosition(e.target.value)}
-                    className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  >
-                    <option value="top-left">↖️ Superior Izquierda</option>
-                    <option value="top-right">↗️ Superior Derecha</option>
-                    <option value="bottom-left">↙️ Inferior Izquierda</option>
-                    <option value="bottom-right">↘️ Inferior Derecha</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Vista previa de hora */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                <div className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-                  Vista previa de hora:
-                </div>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="px-3 py-1 rounded font-mono text-lg"
-                    style={{ backgroundColor: brandColors.background, color: brandColors.primary }}
-                  >
-                    {(() => {
-                      const now = new Date();
-                      if (timeFormat24h) {
-                        return showSeconds
-                          ? now.toLocaleTimeString('es-ES', { hour12: false })
-                          : now.toLocaleTimeString('es-ES', { hour12: false, second: undefined });
-                      } else {
-                        return showSeconds
-                          ? now.toLocaleTimeString('es-ES', { hour12: true })
-                          : now.toLocaleTimeString('es-ES', { hour12: true, second: undefined });
-                      }
-                    })()}
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    Se mostrará en{' '}
-                    {timePosition === 'top-left'
-                      ? 'superior izquierda'
-                      : timePosition === 'top-right'
-                        ? 'superior derecha'
-                        : timePosition === 'bottom-left'
-                          ? 'inferior izquierda'
-                          : 'inferior derecha'}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        <CurrentTimePanel
+          showCurrentTime={showCurrentTime}
+          setShowCurrentTime={setShowCurrentTime}
+          timeFormat24h={timeFormat24h}
+          setTimeFormat24h={setTimeFormat24h}
+          showSeconds={showSeconds}
+          setShowSeconds={setShowSeconds}
+          timePosition={timePosition}
+          setTimePosition={setTimePosition}
+          brandColors={brandColors}
+        />
 
         {/* Display del reloj */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
