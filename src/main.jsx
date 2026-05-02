@@ -51,6 +51,7 @@ import {
   createSequenceMessagePayload,
   resolveMessageTtlMs,
 } from './dashboard/messages';
+import { createNativeActions } from './dashboard/nativeActions';
 import {
   getPreviewBackgroundColor as resolvePreviewBackgroundColor,
   getPreviewTextColor as resolvePreviewTextColor,
@@ -145,6 +146,13 @@ function App() {
 
     return args === undefined ? invoke(commandName) : invoke(commandName, args);
   });
+  const {
+    sendNotification,
+    updateBadge,
+    requestNotificationPermission,
+    setStageForCapture,
+    resetStageWindow,
+  } = useMemo(() => createNativeActions({ runTauriCommand }), [runTauriCommand]);
 
   // instanciar timer al montar
   useEffect(() => {
@@ -410,62 +418,6 @@ function App() {
   );
 
   useGlobalShortcuts(globalShortcutHandlers);
-
-  // Funciones de notificación y badge
-  const sendNotification = async (title, body, icon = null) => {
-    try {
-      await runTauriCommand('send_notification', { title, body, icon });
-    } catch (error) {
-      console.error('Error sending notification:', error);
-    }
-  };
-
-  const updateBadge = async (label) => {
-    try {
-      await runTauriCommand('set_badge_label', { label });
-    } catch (error) {
-      console.error('Error updating badge:', error);
-    }
-  };
-
-  const requestNotificationPermission = async () => {
-    try {
-      const result = await runTauriCommand('request_notification_permission');
-      console.log('Notification permission:', result);
-      return typeof result === 'string' && result.includes('granted');
-    } catch (error) {
-      console.error('Error requesting notification permission:', error);
-      return false;
-    }
-  };
-
-  // Funciones para integración con software de video (Resolume Arena, OBS)
-  const setStageForCapture = async (width, height) => {
-    try {
-      await runTauriCommand('set_stage_for_capture', { width, height });
-      console.log(`✅ Stage configurado para captura: ${width}x${height}`);
-
-      // Mostrar notificación
-      await sendNotification(
-        'Stage Timer - Video Capture',
-        `Ventana configurada para captura de video: ${width}x${height}`,
-      );
-    } catch (error) {
-      console.error('Error configurando stage para captura:', error);
-    }
-  };
-
-  const resetStageWindow = async () => {
-    try {
-      await runTauriCommand('reset_stage_window');
-      console.log('✅ Stage window reset to normal mode');
-
-      // Mostrar notificación
-      await sendNotification('Stage Timer', 'Ventana restaurada al modo normal');
-    } catch (error) {
-      console.error('Error resetting stage window:', error);
-    }
-  };
 
   // Funciones para timers secuenciales
   const addTimerToSequence = () => {
