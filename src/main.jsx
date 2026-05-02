@@ -53,6 +53,7 @@ import {
   getPreviewBackgroundColor as resolvePreviewBackgroundColor,
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
+import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
 
 function App() {
@@ -394,15 +395,40 @@ function App() {
     applyInitial();
   });
 
+  const sendCurrentStageData = useStableCallback(async () => {
+    await pushStageState();
+    console.log('Timer state sent to stage');
+
+    const brandingData = createDashboardBrandingPayload({
+      colors: brandColors,
+      logo,
+      logoSize,
+      blackBackground,
+      showBranding,
+    });
+    await stageWindowClient.emitBranding(brandingData);
+    console.log('Branding sent to stage');
+  });
+
+  const stageActions = useMemo(
+    () =>
+      createStageActions({
+        stageWindowClient,
+        runTauriCommand,
+        getIsFullscreen: () => fullscreenRef.current,
+        onFullscreenChange: (nextFullscreenState) => {
+          fullscreenRef.current = nextFullscreenState;
+          setIsStageFullscreen(nextFullscreenState);
+        },
+        sendStageData: sendCurrentStageData,
+        createReadyDelayMs: STAGE_CREATE_READY_DELAY_MS,
+        sendDataDelayMs: STAGE_SEND_DATA_DELAY_MS,
+      }),
+    [runTauriCommand, sendCurrentStageData],
+  );
+
   const handleToggleStageFullscreen = useStableCallback(async () => {
-    try {
-      const nextFullscreenState = !fullscreenRef.current;
-      await stageWindowClient.toggleFullscreen(nextFullscreenState);
-      fullscreenRef.current = nextFullscreenState;
-      setIsStageFullscreen(nextFullscreenState);
-    } catch (error) {
-      console.log('Error toggling stage fullscreen:', error);
-    }
+    await stageActions.toggleStageFullscreen();
   });
 
   const globalShortcutHandlers = useMemo(
@@ -630,48 +656,7 @@ function App() {
   });
 
   const openFullscreen = async () => {
-    try {
-      console.log('Opening stage window...');
-
-      // First ensure stage window exists (recreate if closed)
-      await runTauriCommand('create_stage_window');
-      console.log('Stage window created');
-
-      // Wait a bit for window to be ready
-      await new Promise((resolve) => setTimeout(resolve, STAGE_CREATE_READY_DELAY_MS));
-
-      // Position the stage window on secondary monitor and make fullscreen
-      await stageWindowClient.positionOnSecondaryMonitor();
-      console.log('Stage positioned on secondary monitor');
-
-      // Focus the stage window
-      await runTauriCommand('focus_stage');
-      console.log('Stage focused');
-
-      // Wait a moment then send current state and branding
-      setTimeout(async () => {
-        try {
-          // Send current timer state
-          await pushStageState();
-          console.log('Timer state sent to stage');
-
-          // Send current branding to ensure new window has correct branding
-          const brandingData = createDashboardBrandingPayload({
-            colors: brandColors,
-            logo,
-            logoSize,
-            blackBackground,
-            showBranding,
-          });
-          await stageWindowClient.emitBranding(brandingData);
-          console.log('Branding sent to stage');
-        } catch (error) {
-          console.error('Error sending data to stage:', error);
-        }
-      }, STAGE_SEND_DATA_DELAY_MS);
-    } catch (error) {
-      console.error('Error opening stage window:', error);
-    }
+    await stageActions.openFullscreen();
   };
 
   const dashboardKeyboardHandlers = useMemo(
