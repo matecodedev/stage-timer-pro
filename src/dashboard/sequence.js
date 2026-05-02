@@ -1,4 +1,5 @@
 import { calculateTotalMs } from './timeConfig.js';
+import { DEFAULT_SEQUENCE_TIMER_INPUTS } from './constants.js';
 
 export function createSequenceTimer({ id, name, hours, minutes, seconds }) {
   return {
@@ -66,4 +67,8 @@ export function createLoadedSequenceTimerState(timer) {
     remainingMs: timer.totalMs,
     color: 'green',
   };
+}
+
+export function getDefaultSequenceTimerInputs() {
+  return { ...DEFAULT_SEQUENCE_TIMER_INPUTS };
 }

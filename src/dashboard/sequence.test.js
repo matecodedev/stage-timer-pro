@@ -6,6 +6,7 @@ import {
   createSequenceJumpState,
   createStartedSequenceState,
   createSequenceTimer,
+  getDefaultSequenceTimerInputs,
   getNextSequenceStep,
   shouldResetSequenceIndexAfterRemoval,
 } from './sequence.js';
@@ -150,6 +151,15 @@ describe('dashboard sequence helpers', () => {
       running: false,
       remainingMs: 12345,
       color: 'green',
+    });
+  });
+
+  test('returns default sequence timer form inputs', () => {
+    expect(getDefaultSequenceTimerInputs()).toEqual({
+      name: '',
+      hours: 0,
+      minutes: 5,
+      seconds: 0,
     });
   });
 });

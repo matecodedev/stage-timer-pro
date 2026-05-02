@@ -32,6 +32,7 @@ import {
   createSequenceJumpState,
   createSequenceTimer,
   createStartedSequenceState,
+  getDefaultSequenceTimerInputs,
   getNextSequenceStep,
   shouldResetSequenceIndexAfterRemoval,
 } from './dashboard/sequence';
@@ -456,10 +457,11 @@ function App() {
     });
 
     setTimerSequence((prev) => [...prev, newTimer]);
-    setNewTimerName('');
-    setNewTimerHours(0);
-    setNewTimerMinutes(5);
-    setNewTimerSeconds(0);
+    const defaultSequenceTimerInputs = getDefaultSequenceTimerInputs();
+    setNewTimerName(defaultSequenceTimerInputs.name);
+    setNewTimerHours(defaultSequenceTimerInputs.hours);
+    setNewTimerMinutes(defaultSequenceTimerInputs.minutes);
+    setNewTimerSeconds(defaultSequenceTimerInputs.seconds);
   };
 
   const removeTimerFromSequence = (id) => {
