@@ -131,6 +131,7 @@ function App() {
     autoAdvance,
   });
   const fullscreenRef = useLatest(isStageFullscreen);
+  const canUseNativeStage = isTauriRuntime();
 
   const runTauriCommand = useStableCallback(async (commandName, args) => {
     if (!isTauriRuntime()) {
@@ -906,7 +907,10 @@ function App() {
           <ControlsPanel start={start} pause={pause} stop={stop} addMin={addMin} />
 
           {/* Stage */}
-          <StageDisplayPanel openFullscreen={openFullscreen} />
+          <StageDisplayPanel
+            openFullscreen={openFullscreen}
+            canOpenNativeStage={canUseNativeStage}
+          />
         </div>
 
         {/* Agregar Timer a Secuencia */}

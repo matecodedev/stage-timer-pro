@@ -1,5 +1,12 @@
-export function Button({ children, onClick, className = '', variant = 'default' }) {
+export function Button({
+  children,
+  onClick,
+  className = '',
+  variant = 'default',
+  disabled = false,
+}) {
   const baseClasses = 'px-3 py-2 rounded border shadow-sm hover:opacity-90 transition-all';
+  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed hover:opacity-50' : '';
   const variants = {
     default:
       'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white',
@@ -10,7 +17,11 @@ export function Button({ children, onClick, className = '', variant = 'default' 
   };
 
   return (
-    <button onClick={onClick} className={`${baseClasses} ${variants[variant]} ${className}`}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${variants[variant]} ${disabledClasses} ${className}`}
+    >
       {children}
     </button>
   );
