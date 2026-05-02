@@ -46,11 +46,8 @@ import {
   STAGE_SEND_DATA_DELAY_MS,
   TIMER_TICK_INTERVAL_MS,
 } from './dashboard/constants';
-import {
-  createDashboardMessagePayload,
-  createSequenceMessagePayload,
-  resolveMessageTtlMs,
-} from './dashboard/messages';
+import { createSequenceMessagePayload } from './dashboard/messages';
+import { createMessageActions } from './dashboard/messageActions';
 import { createNativeActions } from './dashboard/nativeActions';
 import {
   getPreviewBackgroundColor as resolvePreviewBackgroundColor,
@@ -596,66 +593,30 @@ function App() {
     // Enviar al stage window local
     await stageWindowClient.emitState(payload);
   });
+  const messageActions = useMemo(
+    () =>
+      createMessageActions({
+        stageWindowClient,
+        pushStageState,
+        setCurrentGlobalMessage,
+        clearDraft: () => setMessage(''),
+        messageOptions: {
+          persist: persistMsg,
+          ttlSeconds: messageTtl,
+          fontSize,
+          blinking,
+          replaceTimer,
+        },
+      }),
+    [pushStageState, persistMsg, messageTtl, fontSize, blinking, replaceTimer],
+  );
 
   const sendMessage = useStableCallback(async () => {
-    if (!message.trim()) return;
-    const ttlMs = resolveMessageTtlMs({ persist: persistMsg, ttlSeconds: messageTtl });
-
-    const messageData = createDashboardMessagePayload({
-      text: message,
-      ttlMs,
-      fontSize,
-      blinking,
-      replaceTimer,
-    });
-
-    // Actualizar estado global
-    setCurrentGlobalMessage(messageData);
-
-    // Enviar solo el mensaje, SIN tocar el branding
-    await stageWindowClient.emitMessage(messageData);
-
-    // Actualizar estado
-    await pushStageState();
-
-    setMessage('');
-
-    // Limpiar mensaje después del TTL (si no es persistente)
-    if (!persistMsg) {
-      setTimeout(() => {
-        setCurrentGlobalMessage(null);
-        pushStageState();
-      }, ttlMs);
-    }
+    await messageActions.sendMessage({ text: message });
   });
 
   const sendPresetMessage = async (presetText) => {
-    const ttlMs = resolveMessageTtlMs({ persist: persistMsg, ttlSeconds: messageTtl });
-
-    const messageData = createDashboardMessagePayload({
-      text: presetText,
-      ttlMs,
-      fontSize,
-      blinking,
-      replaceTimer,
-    });
-
-    // Actualizar estado global
-    setCurrentGlobalMessage(messageData);
-
-    // Enviar solo el mensaje predefinido, SIN tocar el branding
-    await stageWindowClient.emitMessage(messageData);
-
-    // Actualizar estado
-    await pushStageState();
-
-    // Limpiar mensaje después del TTL (si no es persistente)
-    if (!persistMsg) {
-      setTimeout(() => {
-        setCurrentGlobalMessage(null);
-        pushStageState();
-      }, ttlMs);
-    }
+    await messageActions.sendMessage({ text: presetText, clearAfterSend: false });
   };
 
   // Funciones para la vista previa del stage
@@ -665,13 +626,7 @@ function App() {
   const getPreviewTextColor = () => resolvePreviewTextColor();
 
   const hideMessage = useStableCallback(async () => {
-    // Limpiar mensaje global
-    setCurrentGlobalMessage(null);
-
-    await stageWindowClient.hideMessage();
-
-    // Actualizar estado
-    await pushStageState();
+    await messageActions.hideMessage();
   });
 
   const openFullscreen = async () => {
