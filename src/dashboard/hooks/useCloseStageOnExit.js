@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { isTauriRuntime } from '../../infrastructure/tauri/tauriRuntime.js';
 import { registerStageWindowCloseOnExit } from '../listeners/stageWindowClose.js';
 
 async function getDefaultAppWindow() {
@@ -6,8 +7,12 @@ async function getDefaultAppWindow() {
   return appWindow;
 }
 
-export function useCloseStageOnExit(stageClient) {
+export function useCloseStageOnExit(stageClient, { runtimeWindow = globalThis.window } = {}) {
   useEffect(() => {
+    if (!isTauriRuntime(runtimeWindow)) {
+      return undefined;
+    }
+
     let cleanup = () => {};
     let disposed = false;
 
@@ -25,5 +30,5 @@ export function useCloseStageOnExit(stageClient) {
       disposed = true;
       cleanup();
     };
-  }, [stageClient]);
+  }, [stageClient, runtimeWindow]);
 }

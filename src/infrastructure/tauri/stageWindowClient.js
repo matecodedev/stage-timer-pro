@@ -1,4 +1,5 @@
 import { STAGE_EVENTS } from '../../stage-contract/index.js';
+import { createNoopTauriCommandLogger, isTauriRuntime } from './tauriRuntime.js';
 
 async function getDefaultInvoke() {
   const { invoke } = await import('@tauri-apps/api');
@@ -9,7 +10,16 @@ async function resolveInvoke(invoke) {
   return invoke ?? getDefaultInvoke();
 }
 
-async function emitToStage(invoke, event, payload) {
+function shouldSkipNativeCommand({ invoke, runtimeWindow }) {
+  return !invoke && !isTauriRuntime(runtimeWindow);
+}
+
+async function emitToStage({ invoke, runtimeWindow, skipNativeCommand }, event, payload) {
+  if (shouldSkipNativeCommand({ invoke, runtimeWindow })) {
+    skipNativeCommand('emit_to_stage');
+    return undefined;
+  }
+
   const resolvedInvoke = await resolveInvoke(invoke);
 
   return resolvedInvoke('emit_to_stage', {
@@ -18,45 +28,57 @@ async function emitToStage(invoke, event, payload) {
   });
 }
 
-export function createStageWindowClient({ invoke } = {}) {
+export function createStageWindowClient({
+  invoke,
+  runtimeWindow = globalThis.window,
+  logger = console,
+} = {}) {
+  const commandContext = {
+    invoke,
+    runtimeWindow,
+    skipNativeCommand: createNoopTauriCommandLogger(logger),
+  };
+
+  async function runNativeCommand(commandName, args) {
+    if (shouldSkipNativeCommand({ invoke, runtimeWindow })) {
+      commandContext.skipNativeCommand(commandName);
+      return undefined;
+    }
+
+    const resolvedInvoke = await resolveInvoke(invoke);
+    return args === undefined ? resolvedInvoke(commandName) : resolvedInvoke(commandName, args);
+  }
+
   return {
     emitState(payload) {
-      return emitToStage(invoke, STAGE_EVENTS.STATE, payload);
+      return emitToStage(commandContext, STAGE_EVENTS.STATE, payload);
     },
 
     emitMessage(payload) {
-      return emitToStage(invoke, STAGE_EVENTS.MESSAGE, payload);
+      return emitToStage(commandContext, STAGE_EVENTS.MESSAGE, payload);
     },
 
     emitBranding(payload) {
-      return emitToStage(invoke, STAGE_EVENTS.BRANDING, payload);
+      return emitToStage(commandContext, STAGE_EVENTS.BRANDING, payload);
     },
 
     async hideMessage() {
-      const resolvedInvoke = await resolveInvoke(invoke);
-
-      return resolvedInvoke('emit_to_stage', {
+      return runNativeCommand('emit_to_stage', {
         event: STAGE_EVENTS.HIDE_MESSAGE,
         payload: '{}',
       });
     },
 
     async positionOnSecondaryMonitor() {
-      const resolvedInvoke = await resolveInvoke(invoke);
-
-      return resolvedInvoke('position_stage_on_secondary_monitor');
+      return runNativeCommand('position_stage_on_secondary_monitor');
     },
 
     async toggleFullscreen(on) {
-      const resolvedInvoke = await resolveInvoke(invoke);
-
-      return resolvedInvoke('toggle_stage_fullscreen', { on });
+      return runNativeCommand('toggle_stage_fullscreen', { on });
     },
 
     async close() {
-      const resolvedInvoke = await resolveInvoke(invoke);
-
-      return resolvedInvoke('close_stage_window');
+      return runNativeCommand('close_stage_window');
     },
   };
 }

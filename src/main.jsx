@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Countdown, formatMs } from './timer';
 import { invoke } from '@tauri-apps/api';
+import { isTauriRuntime } from './infrastructure/tauri/tauriRuntime';
 import { stageWindowClient } from './infrastructure/tauri/stageWindowClient';
 import { Button } from './dashboard/components/Button';
 import { SettingsPanel } from './dashboard/components/SettingsPanel';
@@ -130,6 +131,15 @@ function App() {
     autoAdvance,
   });
   const fullscreenRef = useLatest(isStageFullscreen);
+
+  const runTauriCommand = useStableCallback(async (commandName, args) => {
+    if (!isTauriRuntime()) {
+      console.debug(`Skipping Tauri command outside runtime: ${commandName}`);
+      return undefined;
+    }
+
+    return args === undefined ? invoke(commandName) : invoke(commandName, args);
+  });
 
   // instanciar timer al montar
   useEffect(() => {
@@ -399,7 +409,7 @@ function App() {
   // Funciones de notificación y badge
   const sendNotification = async (title, body, icon = null) => {
     try {
-      await invoke('send_notification', { title, body, icon });
+      await runTauriCommand('send_notification', { title, body, icon });
     } catch (error) {
       console.error('Error sending notification:', error);
     }
@@ -407,7 +417,7 @@ function App() {
 
   const updateBadge = async (label) => {
     try {
-      await invoke('set_badge_label', { label });
+      await runTauriCommand('set_badge_label', { label });
     } catch (error) {
       console.error('Error updating badge:', error);
     }
@@ -415,9 +425,9 @@ function App() {
 
   const requestNotificationPermission = async () => {
     try {
-      const result = await invoke('request_notification_permission');
+      const result = await runTauriCommand('request_notification_permission');
       console.log('Notification permission:', result);
-      return result.includes('granted');
+      return typeof result === 'string' && result.includes('granted');
     } catch (error) {
       console.error('Error requesting notification permission:', error);
       return false;
@@ -427,7 +437,7 @@ function App() {
   // Funciones para integración con software de video (Resolume Arena, OBS)
   const setStageForCapture = async (width, height) => {
     try {
-      await invoke('set_stage_for_capture', { width, height });
+      await runTauriCommand('set_stage_for_capture', { width, height });
       console.log(`✅ Stage configurado para captura: ${width}x${height}`);
 
       // Mostrar notificación
@@ -442,7 +452,7 @@ function App() {
 
   const resetStageWindow = async () => {
     try {
-      await invoke('reset_stage_window');
+      await runTauriCommand('reset_stage_window');
       console.log('✅ Stage window reset to normal mode');
 
       // Mostrar notificación
@@ -712,7 +722,7 @@ function App() {
       console.log('Opening stage window...');
 
       // First ensure stage window exists (recreate if closed)
-      await invoke('create_stage_window');
+      await runTauriCommand('create_stage_window');
       console.log('Stage window created');
 
       // Wait a bit for window to be ready
@@ -723,7 +733,7 @@ function App() {
       console.log('Stage positioned on secondary monitor');
 
       // Focus the stage window
-      await invoke('focus_stage');
+      await runTauriCommand('focus_stage');
       console.log('Stage focused');
 
       // Wait a moment then send current state and branding
