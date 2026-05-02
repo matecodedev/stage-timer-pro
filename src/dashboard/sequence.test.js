@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import {
   createCompletedSequenceState,
+  createSequenceJumpState,
+  createStartedSequenceState,
   createSequenceTimer,
   getNextSequenceStep,
   shouldResetSequenceIndexAfterRemoval,
@@ -77,6 +79,41 @@ describe('dashboard sequence helpers', () => {
       timerSequence: [{ id: 1 }],
       currentSequenceIndex: 0,
       sequenceMode: false,
+      autoAdvance: true,
+    });
+  });
+
+  test('creates a started sequence state from the current sequence', () => {
+    expect(
+      createStartedSequenceState({
+        timerSequence: [{ id: 1 }],
+        currentSequenceIndex: 4,
+        sequenceMode: false,
+        autoAdvance: false,
+      }),
+    ).toEqual({
+      timerSequence: [{ id: 1 }],
+      currentSequenceIndex: 0,
+      sequenceMode: true,
+      autoAdvance: false,
+    });
+  });
+
+  test('creates a sequence state for jumping to a specific timer', () => {
+    expect(
+      createSequenceJumpState(
+        {
+          timerSequence: [{ id: 1 }, { id: 2 }],
+          currentSequenceIndex: 0,
+          sequenceMode: true,
+          autoAdvance: true,
+        },
+        1,
+      ),
+    ).toEqual({
+      timerSequence: [{ id: 1 }, { id: 2 }],
+      currentSequenceIndex: 1,
+      sequenceMode: true,
       autoAdvance: true,
     });
   });

@@ -27,7 +27,9 @@ import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
 import {
   createCompletedSequenceState,
+  createSequenceJumpState,
   createSequenceTimer,
+  createStartedSequenceState,
   getNextSequenceStep,
   shouldResetSequenceIndexAfterRemoval,
 } from './dashboard/sequence';
@@ -474,11 +476,7 @@ function App() {
     const sequence = sequenceRef.current;
     if (sequence.timerSequence.length === 0) return;
 
-    sequenceRef.current = {
-      ...sequence,
-      sequenceMode: true,
-      currentSequenceIndex: 0,
-    };
+    sequenceRef.current = createStartedSequenceState(sequence);
     setSequenceMode(true);
     setCurrentSequenceIndex(0);
     loadTimerFromSequence(0);
@@ -563,10 +561,7 @@ function App() {
     const sequence = sequenceRef.current;
     if (index >= sequence.timerSequence.length) return;
 
-    sequenceRef.current = {
-      ...sequence,
-      currentSequenceIndex: index,
-    };
+    sequenceRef.current = createSequenceJumpState(sequence, index);
     setCurrentSequenceIndex(index);
     loadTimerFromSequence(index);
 

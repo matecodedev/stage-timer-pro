@@ -35,3 +35,18 @@ export function createCompletedSequenceState(sequence) {
     currentSequenceIndex: 0,
   };
 }
+
+export function createStartedSequenceState(sequence) {
+  return {
+    ...sequence,
+    sequenceMode: true,
+    currentSequenceIndex: 0,
+  };
+}
+
+export function createSequenceJumpState(sequence, currentSequenceIndex) {
+  return {
+    ...sequence,
+    currentSequenceIndex,
+  };
+}
