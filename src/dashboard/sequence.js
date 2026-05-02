@@ -50,3 +50,20 @@ export function createSequenceJumpState(sequence, currentSequenceIndex) {
     currentSequenceIndex,
   };
 }
+
+export function createLoadedSequenceTimerInputs(inputs, timer) {
+  return {
+    ...inputs,
+    hours: timer.hours,
+    minutes: timer.minutes,
+    seconds: timer.seconds,
+  };
+}
+
+export function createLoadedSequenceTimerState(timer) {
+  return {
+    running: false,
+    remainingMs: timer.totalMs,
+    color: 'green',
+  };
+}

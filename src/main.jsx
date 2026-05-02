@@ -27,6 +27,8 @@ import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
 import {
   createCompletedSequenceState,
+  createLoadedSequenceTimerInputs,
+  createLoadedSequenceTimerState,
   createSequenceJumpState,
   createSequenceTimer,
   createStartedSequenceState,
@@ -500,12 +502,7 @@ function App() {
     if (index >= sequence.timerSequence.length) return;
 
     const timer = sequence.timerSequence[index];
-    timerInputsRef.current = {
-      ...inputs,
-      hours: timer.hours,
-      minutes: timer.minutes,
-      seconds: timer.seconds,
-    };
+    timerInputsRef.current = createLoadedSequenceTimerInputs(inputs, timer);
     setHours(timer.hours);
     setMinutes(timer.minutes);
     setSeconds(timer.seconds);
@@ -518,7 +515,7 @@ function App() {
       negativeMode: inputs.neg,
       colorThresholds: thresholds,
     });
-    const nextState = { running: false, remainingMs: timer.totalMs, color: 'green' };
+    const nextState = createLoadedSequenceTimerState(timer);
     stateRef.current = nextState;
     setState(nextState);
     pushStageState();

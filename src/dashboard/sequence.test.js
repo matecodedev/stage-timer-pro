@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import {
   createCompletedSequenceState,
+  createLoadedSequenceTimerInputs,
+  createLoadedSequenceTimerState,
   createSequenceJumpState,
   createStartedSequenceState,
   createSequenceTimer,
@@ -115,6 +117,39 @@ describe('dashboard sequence helpers', () => {
       currentSequenceIndex: 1,
       sequenceMode: true,
       autoAdvance: true,
+    });
+  });
+
+  test('creates timer inputs for a loaded sequence timer while preserving other settings', () => {
+    expect(
+      createLoadedSequenceTimerInputs(
+        {
+          hours: 0,
+          minutes: 15,
+          seconds: 0,
+          warn: 5,
+          neg: false,
+        },
+        {
+          hours: 1,
+          minutes: 2,
+          seconds: 3,
+        },
+      ),
+    ).toEqual({
+      hours: 1,
+      minutes: 2,
+      seconds: 3,
+      warn: 5,
+      neg: false,
+    });
+  });
+
+  test('creates dashboard timer state for a loaded sequence timer', () => {
+    expect(createLoadedSequenceTimerState({ totalMs: 12345 })).toEqual({
+      running: false,
+      remainingMs: 12345,
+      color: 'green',
     });
   });
 });
