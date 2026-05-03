@@ -13,6 +13,13 @@ export function createSequenceTimer({ id, name, hours, minutes, seconds }) {
   };
 }
 
+export function createSequenceAddResult({ timerSequence, timer }) {
+  return {
+    timerSequence: [...timerSequence, timer],
+    nextInputs: getDefaultSequenceTimerInputs(),
+  };
+}
+
 export function shouldResetSequenceIndexAfterRemoval({
   currentSequenceIndex,
   sequenceLengthBeforeRemoval,
@@ -56,10 +63,32 @@ export function createStartedSequenceState(sequence) {
   };
 }
 
+export function createSequenceStartResult(sequence) {
+  if (sequence.timerSequence.length === 0) {
+    return null;
+  }
+
+  return {
+    startIndex: 0,
+    sequence: createStartedSequenceState(sequence),
+  };
+}
+
 export function createSequenceJumpState(sequence, currentSequenceIndex) {
   return {
     ...sequence,
     currentSequenceIndex,
+  };
+}
+
+export function createSequenceJumpResult(sequence, currentSequenceIndex) {
+  if (currentSequenceIndex >= sequence.timerSequence.length) {
+    return null;
+  }
+
+  return {
+    jumpIndex: currentSequenceIndex,
+    sequence: createSequenceJumpState(sequence, currentSequenceIndex),
   };
 }
 

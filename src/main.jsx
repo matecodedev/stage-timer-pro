@@ -27,15 +27,15 @@ import { createBrandingActions } from './dashboard/brandingActions';
 import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
 import {
+  createSequenceAddResult,
   createSequenceAdvanceResult,
+  createSequenceJumpResult,
   createCompletedSequenceState,
   createLoadedSequenceTimerInputs,
   createLoadedSequenceTimerState,
-  createSequenceJumpState,
+  createSequenceStartResult,
   createSequenceRemovalResult,
   createSequenceTimer,
-  createStartedSequenceState,
-  getDefaultSequenceTimerInputs,
   scheduleSequenceTimerAutostart,
 } from './dashboard/sequence';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
@@ -455,12 +455,16 @@ function App() {
       seconds: newTimerSeconds,
     });
 
-    setTimerSequence((prev) => [...prev, newTimer]);
-    const defaultSequenceTimerInputs = getDefaultSequenceTimerInputs();
-    setNewTimerName(defaultSequenceTimerInputs.name);
-    setNewTimerHours(defaultSequenceTimerInputs.hours);
-    setNewTimerMinutes(defaultSequenceTimerInputs.minutes);
-    setNewTimerSeconds(defaultSequenceTimerInputs.seconds);
+    const addResult = createSequenceAddResult({
+      timerSequence: sequenceRef.current.timerSequence,
+      timer: newTimer,
+    });
+    setTimerSequence(addResult.timerSequence);
+    const nextSequenceInputs = addResult.nextInputs;
+    setNewTimerName(nextSequenceInputs.name);
+    setNewTimerHours(nextSequenceInputs.hours);
+    setNewTimerMinutes(nextSequenceInputs.minutes);
+    setNewTimerSeconds(nextSequenceInputs.seconds);
   };
 
   const removeTimerFromSequence = (id) => {
@@ -481,12 +485,13 @@ function App() {
 
   const startSequence = () => {
     const sequence = sequenceRef.current;
-    if (sequence.timerSequence.length === 0) return;
+    const startResult = createSequenceStartResult(sequence);
+    if (!startResult) return;
 
-    sequenceRef.current = createStartedSequenceState(sequence);
+    sequenceRef.current = startResult.sequence;
     setSequenceMode(true);
-    setCurrentSequenceIndex(0);
-    loadTimerFromSequence(0);
+    setCurrentSequenceIndex(startResult.startIndex);
+    loadTimerFromSequence(startResult.startIndex);
     start();
   };
 
@@ -549,11 +554,12 @@ function App() {
 
   const jumpToSequenceTimer = (index) => {
     const sequence = sequenceRef.current;
-    if (index >= sequence.timerSequence.length) return;
+    const jumpResult = createSequenceJumpResult(sequence, index);
+    if (!jumpResult) return;
 
-    sequenceRef.current = createSequenceJumpState(sequence, index);
-    setCurrentSequenceIndex(index);
-    loadTimerFromSequence(index);
+    sequenceRef.current = jumpResult.sequence;
+    setCurrentSequenceIndex(jumpResult.jumpIndex);
+    loadTimerFromSequence(jumpResult.jumpIndex);
 
     // Si estaba corriendo, continuar con el nuevo timer
     if (stateRef.current.running) {

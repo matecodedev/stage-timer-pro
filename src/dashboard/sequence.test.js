@@ -1,7 +1,10 @@
 import { describe, expect, test, vi } from 'vitest';
 import {
+  createSequenceAddResult,
   createSequenceAdvanceResult,
+  createSequenceJumpResult,
   createSequenceRemovalResult,
+  createSequenceStartResult,
   createCompletedSequenceState,
   createLoadedSequenceTimerInputs,
   createLoadedSequenceTimerState,
@@ -31,6 +34,26 @@ describe('dashboard sequence helpers', () => {
       minutes: 2,
       seconds: 3,
       totalMs: 3_723_000,
+    });
+  });
+
+  test('creates sequence add result with appended timer and reset form inputs', () => {
+    expect(
+      createSequenceAddResult({
+        timerSequence: [{ id: 1, name: 'Intro' }],
+        timer: { id: 2, name: 'Cierre' },
+      }),
+    ).toEqual({
+      timerSequence: [
+        { id: 1, name: 'Intro' },
+        { id: 2, name: 'Cierre' },
+      ],
+      nextInputs: {
+        name: '',
+        hours: 0,
+        minutes: 5,
+        seconds: 0,
+      },
     });
   });
 
@@ -171,6 +194,36 @@ describe('dashboard sequence helpers', () => {
     });
   });
 
+  test('creates start result for a non-empty sequence', () => {
+    expect(
+      createSequenceStartResult({
+        timerSequence: [{ id: 1 }],
+        currentSequenceIndex: 4,
+        sequenceMode: false,
+        autoAdvance: false,
+      }),
+    ).toEqual({
+      startIndex: 0,
+      sequence: {
+        timerSequence: [{ id: 1 }],
+        currentSequenceIndex: 0,
+        sequenceMode: true,
+        autoAdvance: false,
+      },
+    });
+  });
+
+  test('returns null start result for an empty sequence', () => {
+    expect(
+      createSequenceStartResult({
+        timerSequence: [],
+        currentSequenceIndex: 0,
+        sequenceMode: false,
+        autoAdvance: true,
+      }),
+    ).toBeNull();
+  });
+
   test('creates a sequence state for jumping to a specific timer', () => {
     expect(
       createSequenceJumpState(
@@ -188,6 +241,42 @@ describe('dashboard sequence helpers', () => {
       sequenceMode: true,
       autoAdvance: true,
     });
+  });
+
+  test('creates jump result for a valid sequence timer index', () => {
+    expect(
+      createSequenceJumpResult(
+        {
+          timerSequence: [{ id: 1 }, { id: 2 }],
+          currentSequenceIndex: 0,
+          sequenceMode: true,
+          autoAdvance: true,
+        },
+        1,
+      ),
+    ).toEqual({
+      jumpIndex: 1,
+      sequence: {
+        timerSequence: [{ id: 1 }, { id: 2 }],
+        currentSequenceIndex: 1,
+        sequenceMode: true,
+        autoAdvance: true,
+      },
+    });
+  });
+
+  test('returns null jump result for an invalid sequence timer index', () => {
+    expect(
+      createSequenceJumpResult(
+        {
+          timerSequence: [{ id: 1 }, { id: 2 }],
+          currentSequenceIndex: 0,
+          sequenceMode: true,
+          autoAdvance: true,
+        },
+        3,
+      ),
+    ).toBeNull();
   });
 
   test('creates timer inputs for a loaded sequence timer while preserving other settings', () => {
