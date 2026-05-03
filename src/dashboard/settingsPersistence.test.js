@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import {
   DASHBOARD_SETTINGS_STORAGE_KEY,
   loadDashboardSettings,
+  normalizeDashboardSettings,
   saveDashboardSettings,
 } from './settingsPersistence.js';
 
@@ -42,6 +43,31 @@ describe('dashboard settings persistence', () => {
     storage.setItem(DASHBOARD_SETTINGS_STORAGE_KEY, JSON.stringify(saved));
 
     expect(loadDashboardSettings({ storage })).toEqual(saved);
+  });
+
+  test('normalizes and drops invalid saved settings fields', () => {
+    expect(
+      normalizeDashboardSettings({
+        timer: { hours: 'x', minutes: 20, seconds: null, warn: 4, neg: 'yes' },
+        sequence: { autoAdvance: false },
+        message: { ttl: 6, persist: true, fontSize: 'big', blinking: true, replaceTimer: false },
+        branding: { logo: 123, logoSize: 100, blackBackground: true, showBranding: 'on' },
+        timeDisplay: {
+          showCurrentTime: false,
+          timeFormat24h: false,
+          showSeconds: 'no',
+          timePosition: 'top-left',
+        },
+        colors: { enableAdvancedColors: true, thresholds: 'bad' },
+      }),
+    ).toEqual({
+      timer: { minutes: 20, warn: 4 },
+      sequence: { autoAdvance: false },
+      message: { ttl: 6, persist: true, blinking: true, replaceTimer: false },
+      branding: { logoSize: 100, blackBackground: true },
+      timeDisplay: { showCurrentTime: false, timeFormat24h: false, timePosition: 'top-left' },
+      colors: { enableAdvancedColors: true },
+    });
   });
 
   test('saves settings as json', () => {
