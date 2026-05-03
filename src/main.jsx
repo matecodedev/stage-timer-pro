@@ -65,6 +65,7 @@ import {
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
 import { createSequenceMessageActions } from './dashboard/sequenceMessageActions';
+import { applySequenceLoadResult } from './dashboard/sequenceLoader';
 import { createSequenceCountdown } from './dashboard/sequenceTimerFactory';
 import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
@@ -509,26 +510,22 @@ function App() {
       index,
       timerInputs: inputs,
     });
-    if (!loadResult) return;
-
-    timerInputsRef.current = loadResult.nextInputs;
-    setHours(loadResult.timer.hours);
-    setMinutes(loadResult.timer.minutes);
-    setSeconds(loadResult.timer.seconds);
-
-    // Aplicar el timer
-    timerRef.current = createSequenceCountdown({
+    applySequenceLoadResult({
+      loadResult,
+      timerInputsRef,
+      setHours,
+      setMinutes,
+      setSeconds,
       Countdown,
       createColorThresholds,
-      timer: loadResult.timer,
-      inputs,
+      createSequenceCountdown,
+      timerRef,
+      stateRef,
+      setState,
+      pushStageState,
+      sendTimerMessage,
+      messageTtlMs: SEQUENCE_MESSAGE_TTL_MS,
     });
-    stateRef.current = loadResult.nextState;
-    setState(loadResult.nextState);
-    pushStageState();
-
-    // Enviar mensaje con nombre del timer actual
-    sendTimerMessage(loadResult.messageText, SEQUENCE_MESSAGE_TTL_MS);
   });
 
   const advanceToNextTimer = useStableCallback(() => {
