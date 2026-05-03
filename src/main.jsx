@@ -65,6 +65,7 @@ import {
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
 import { createSequenceMessageActions } from './dashboard/sequenceMessageActions';
+import { createSequenceCountdown } from './dashboard/sequenceTimerFactory';
 import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
 
@@ -505,14 +506,13 @@ function App() {
     setHours(timer.hours);
     setMinutes(timer.minutes);
     setSeconds(timer.seconds);
-    const thresholds = createColorThresholds(inputs);
 
     // Aplicar el timer
-    timerRef.current = new Countdown({
-      initialMs: timer.totalMs,
-      warnMs: inputs.warn * 60_000,
-      negativeMode: inputs.neg,
-      colorThresholds: thresholds,
+    timerRef.current = createSequenceCountdown({
+      Countdown,
+      createColorThresholds,
+      timer,
+      inputs,
     });
     const nextState = createLoadedSequenceTimerState(timer);
     stateRef.current = nextState;
