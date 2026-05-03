@@ -1,17 +1,20 @@
 import { formatDashboardTime } from '../timeConfig.js';
-import { getPreviewSequenceLabel } from '../preview.js';
+import { getPreviewMessageState, getPreviewSequenceLabel } from '../preview.js';
 
 export function StagePreviewPanel({
   state,
   timerSequence,
   sequenceMode,
   currentSequenceIndex,
+  currentGlobalMessage,
   logo,
   logoSize,
   showBranding,
   getPreviewBackgroundColor,
   getPreviewTextColor,
 }) {
+  const previewMessage = getPreviewMessageState(currentGlobalMessage);
+
   return (
     <>
       {/* Vista Previa del Stage */}
@@ -55,15 +58,15 @@ export function StagePreviewPanel({
             )}
 
             {/* Mensaje si existe */}
-            {state.messageShown && (
+            {previewMessage.visible && (
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
                 <div
                   className="text-xl font-bold text-center px-4 text-white"
                   style={{
-                    fontSize: Math.min(24, (state.messageFontSize || 200) * 0.1) + 'px',
+                    fontSize: `${previewMessage.fontSizePx}px`,
                   }}
                 >
-                  {state.messageText}
+                  {previewMessage.text}
                 </div>
               </div>
             )}
@@ -132,7 +135,7 @@ export function StagePreviewPanel({
             <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
               <div className="font-medium text-gray-600 dark:text-gray-300">Mensaje</div>
               <div className="text-gray-800 dark:text-gray-200">
-                {state.messageShown ? 'Visible' : 'Oculto'}
+                {previewMessage.visible ? 'Visible' : 'Oculto'}
               </div>
             </div>
           </div>

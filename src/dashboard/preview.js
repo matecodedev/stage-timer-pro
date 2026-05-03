@@ -24,3 +24,15 @@ export function getPreviewSequenceLabel({ sequenceMode, currentSequenceIndex, se
 
   return `${currentSequenceIndex + 1}/${sequenceLength}`;
 }
+
+export function getPreviewMessageState(message) {
+  if (!message?.visible) {
+    return { visible: false };
+  }
+
+  return {
+    visible: true,
+    text: message.text,
+    fontSizePx: Math.min(24, (message.fontSize || 200) * 0.1),
+  };
+}

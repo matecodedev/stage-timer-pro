@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   getPreviewBackgroundColor,
+  getPreviewMessageState,
   getPreviewSequenceLabel,
   getPreviewTextColor,
 } from './preview.js';
@@ -50,5 +51,28 @@ describe('dashboard preview helpers', () => {
     expect(
       getPreviewSequenceLabel({ sequenceMode: true, currentSequenceIndex: 1, sequenceLength: 3 }),
     ).toBe('2/3');
+  });
+
+  test('hides preview message when no visible global message exists', () => {
+    expect(getPreviewMessageState(null)).toEqual({ visible: false });
+    expect(getPreviewMessageState({ visible: false, text: 'Hidden', fontSize: 180 })).toEqual({
+      visible: false,
+    });
+  });
+
+  test('shows visible global message text and scaled font in preview', () => {
+    expect(getPreviewMessageState({ visible: true, text: 'QA mensaje', fontSize: 200 })).toEqual({
+      visible: true,
+      text: 'QA mensaje',
+      fontSizePx: 20,
+    });
+  });
+
+  test('caps preview message font size for large stage messages', () => {
+    expect(getPreviewMessageState({ visible: true, text: 'Grande', fontSize: 600 })).toEqual({
+      visible: true,
+      text: 'Grande',
+      fontSizePx: 24,
+    });
   });
 });

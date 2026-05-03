@@ -110,7 +110,7 @@ function App() {
   const [showBranding, setShowBranding] = useState(DEFAULT_BRANDING.showBranding);
 
   // Estados globales para mensajes y branding actual
-  const [, setCurrentGlobalMessage] = useState(null);
+  const [currentGlobalMessage, setCurrentGlobalMessage] = useState(null);
   const [, setCurrentGlobalBranding] = useState(null);
 
   // Estados para timers secuenciales
@@ -780,6 +780,7 @@ function App() {
             timerSequence={timerSequence}
             sequenceMode={sequenceMode}
             currentSequenceIndex={currentSequenceIndex}
+            currentGlobalMessage={currentGlobalMessage}
             logo={logo}
             logoSize={logoSize}
             showBranding={showBranding}
