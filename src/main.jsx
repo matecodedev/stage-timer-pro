@@ -778,6 +778,8 @@ function App() {
           <StagePreviewPanel
             state={state}
             timerSequence={timerSequence}
+            sequenceMode={sequenceMode}
+            currentSequenceIndex={currentSequenceIndex}
             logo={logo}
             logoSize={logoSize}
             showBranding={showBranding}

@@ -4,6 +4,8 @@ import { getPreviewSequenceLabel } from '../preview.js';
 export function StagePreviewPanel({
   state,
   timerSequence,
+  sequenceMode,
+  currentSequenceIndex,
   logo,
   logoSize,
   showBranding,
@@ -121,7 +123,8 @@ export function StagePreviewPanel({
               <div className="font-medium text-gray-600 dark:text-gray-300">Secuencia</div>
               <div className="text-gray-800 dark:text-gray-200">
                 {getPreviewSequenceLabel({
-                  currentSequenceIndex: state.currentSequenceIndex,
+                  sequenceMode,
+                  currentSequenceIndex,
                   sequenceLength: timerSequence.length,
                 })}
               </div>

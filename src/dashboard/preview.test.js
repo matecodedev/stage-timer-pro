@@ -28,6 +28,13 @@ describe('dashboard preview helpers', () => {
   });
 
   test('shows individual mode when sequence index is missing or invalid', () => {
+    expect(
+      getPreviewSequenceLabel({
+        sequenceMode: false,
+        currentSequenceIndex: 0,
+        sequenceLength: 2,
+      }),
+    ).toBe('Individual');
     expect(getPreviewSequenceLabel({ currentSequenceIndex: undefined, sequenceLength: 2 })).toBe(
       'Individual',
     );
@@ -40,6 +47,8 @@ describe('dashboard preview helpers', () => {
   });
 
   test('formats active sequence position when index and length are valid', () => {
-    expect(getPreviewSequenceLabel({ currentSequenceIndex: 1, sequenceLength: 3 })).toBe('2/3');
+    expect(
+      getPreviewSequenceLabel({ sequenceMode: true, currentSequenceIndex: 1, sequenceLength: 3 }),
+    ).toBe('2/3');
   });
 });

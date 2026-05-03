@@ -12,8 +12,9 @@ export function getPreviewTextColor() {
   return '#FFFFFF';
 }
 
-export function getPreviewSequenceLabel({ currentSequenceIndex, sequenceLength }) {
+export function getPreviewSequenceLabel({ sequenceMode, currentSequenceIndex, sequenceLength }) {
   if (
+    !sequenceMode ||
     !Number.isInteger(currentSequenceIndex) ||
     !Number.isInteger(sequenceLength) ||
     sequenceLength <= 0
