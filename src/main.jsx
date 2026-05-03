@@ -25,18 +25,9 @@ import { InitialTimePanel } from './dashboard/components/InitialTimePanel';
 import { HeaderPanel } from './dashboard/components/HeaderPanel';
 import { createBrandingActions } from './dashboard/brandingActions';
 import { createDashboardBrandingPayload } from './dashboard/branding';
+import { createSequenceActions } from './dashboard/sequenceActions';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
-import {
-  createSequenceAddResult,
-  createSequenceAdvanceResult,
-  createSequenceJumpResult,
-  createSequenceLoadResult,
-  createCompletedSequenceState,
-  createSequenceStartResult,
-  createSequenceRemovalResult,
-  createSequenceTimer,
-  scheduleSequenceTimerAutostart,
-} from './dashboard/sequence';
+import { scheduleSequenceTimerAutostart } from './dashboard/sequence';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
 import { useDashboardKeyboardShortcuts } from './dashboard/hooks/useDashboardKeyboardShortcuts';
 import { useGlobalShortcuts } from './dashboard/hooks/useGlobalShortcuts';
@@ -65,11 +56,6 @@ import {
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
 import { createSequenceMessageActions } from './dashboard/sequenceMessageActions';
-import {
-  applySequenceAdvanceResult,
-  applySequenceJumpResult,
-  applySequenceLoadResult,
-} from './dashboard/sequenceLoader';
 import { createSequenceCountdown } from './dashboard/sequenceTimerFactory';
 import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
@@ -447,129 +433,6 @@ function App() {
 
   useGlobalShortcuts(globalShortcutHandlers);
 
-  // Funciones para timers secuenciales
-  const addTimerToSequence = () => {
-    if (!newTimerName.trim()) return;
-
-    const newTimer = createSequenceTimer({
-      id: Date.now(),
-      name: newTimerName,
-      hours: newTimerHours,
-      minutes: newTimerMinutes,
-      seconds: newTimerSeconds,
-    });
-
-    const addResult = createSequenceAddResult({
-      timerSequence: sequenceRef.current.timerSequence,
-      timer: newTimer,
-    });
-    setTimerSequence(addResult.timerSequence);
-    const nextSequenceInputs = addResult.nextInputs;
-    setNewTimerName(nextSequenceInputs.name);
-    setNewTimerHours(nextSequenceInputs.hours);
-    setNewTimerMinutes(nextSequenceInputs.minutes);
-    setNewTimerSeconds(nextSequenceInputs.seconds);
-  };
-
-  const removeTimerFromSequence = (id) => {
-    setTimerSequence((prev) => {
-      const removalResult = createSequenceRemovalResult({
-        timerSequence: prev,
-        currentSequenceIndex,
-        idToRemove: id,
-      });
-
-      if (removalResult.shouldResetIndex) {
-        setCurrentSequenceIndex(0);
-      }
-
-      return removalResult.timerSequence;
-    });
-  };
-
-  const startSequence = () => {
-    const sequence = sequenceRef.current;
-    const startResult = createSequenceStartResult(sequence);
-    if (!startResult) return;
-
-    sequenceRef.current = startResult.sequence;
-    setSequenceMode(true);
-    setCurrentSequenceIndex(startResult.startIndex);
-    loadTimerFromSequence(startResult.startIndex);
-    start();
-  };
-
-  const stopSequence = () => {
-    sequenceRef.current = createCompletedSequenceState(sequenceRef.current);
-    setSequenceMode(false);
-    setCurrentSequenceIndex(0);
-    stop();
-  };
-
-  const loadTimerFromSequence = useStableCallback((index) => {
-    const sequence = sequenceRef.current;
-    const inputs = timerInputsRef.current;
-    const loadResult = createSequenceLoadResult({
-      timerSequence: sequence.timerSequence,
-      index,
-      timerInputs: inputs,
-    });
-    applySequenceLoadResult({
-      loadResult,
-      timerInputsRef,
-      setHours,
-      setMinutes,
-      setSeconds,
-      Countdown,
-      createColorThresholds,
-      createSequenceCountdown,
-      timerRef,
-      stateRef,
-      setState,
-      pushStageState,
-      sendTimerMessage,
-      messageTtlMs: SEQUENCE_MESSAGE_TTL_MS,
-    });
-  });
-
-  const scheduleSequenceAutostart = useStableCallback(() => {
-    scheduleSequenceTimerAutostart({
-      timerRef,
-      pushStageState,
-      delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
-    });
-  });
-
-  const advanceToNextTimer = useStableCallback(() => {
-    const sequence = sequenceRef.current;
-    const sequenceStep = createSequenceAdvanceResult(sequence);
-
-    applySequenceAdvanceResult({
-      sequenceStep,
-      sequenceRef,
-      setSequenceMode,
-      setCurrentSequenceIndex,
-      loadTimerFromSequence,
-      scheduleAutostart: scheduleSequenceAutostart,
-      sendTimerMessage,
-      completedMessageTtlMs: SEQUENCE_COMPLETED_TTL_MS,
-    });
-  });
-
-  const jumpToSequenceTimer = (index) => {
-    const sequence = sequenceRef.current;
-    const jumpResult = createSequenceJumpResult(sequence, index);
-
-    applySequenceJumpResult({
-      jumpResult,
-      sequenceRef,
-      setCurrentSequenceIndex,
-      loadTimerFromSequence,
-      shouldAutostart: stateRef.current.running,
-      scheduleAutostart: scheduleSequenceAutostart,
-    });
-  };
-
   // Enviar estado al Stage
   const pushStageState = useStableCallback(async () => {
     if (!timerRef.current) return;
@@ -598,6 +461,68 @@ function App() {
 
   const sendTimerMessage = useStableCallback(async (text, ttlMs = SEQUENCE_MESSAGE_TTL_MS) => {
     await sequenceMessageActions.sendTimerMessage(text, ttlMs);
+  });
+
+  const scheduleSequenceAutostart = useStableCallback(() => {
+    scheduleSequenceTimerAutostart({
+      timerRef,
+      pushStageState,
+      delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
+    });
+  });
+
+  const sequenceActions = useMemo(
+    () =>
+      createSequenceActions({
+        newTimerDraft: {
+          name: newTimerName,
+          hours: newTimerHours,
+          minutes: newTimerMinutes,
+          seconds: newTimerSeconds,
+        },
+        currentSequenceIndex,
+        sequenceRef,
+        timerInputsRef,
+        stateRef,
+        timerRef,
+        Countdown,
+        createColorThresholds,
+        createSequenceCountdown,
+        setTimerSequence,
+        setNewTimerName,
+        setNewTimerHours,
+        setNewTimerMinutes,
+        setNewTimerSeconds,
+        setCurrentSequenceIndex,
+        setSequenceMode,
+        setHours,
+        setMinutes,
+        setSeconds,
+        setState,
+        pushStageState,
+        sendTimerMessage,
+        start,
+        stop,
+        scheduleSequenceAutostart,
+        messageTtlMs: SEQUENCE_MESSAGE_TTL_MS,
+        completedMessageTtlMs: SEQUENCE_COMPLETED_TTL_MS,
+      }),
+    [
+      newTimerName,
+      newTimerHours,
+      newTimerMinutes,
+      newTimerSeconds,
+      currentSequenceIndex,
+      pushStageState,
+      sendTimerMessage,
+      start,
+      stop,
+      scheduleSequenceAutostart,
+    ],
+  );
+
+  const advanceToNextTimer = useStableCallback(() => {
+    sequenceActions.advanceToNextTimer();
   });
 
   const messageActions = useMemo(
@@ -689,10 +614,10 @@ function App() {
             sequenceMode={sequenceMode}
             timerSequence={timerSequence}
             currentSequenceIndex={currentSequenceIndex}
-            jumpToSequenceTimer={jumpToSequenceTimer}
-            removeTimerFromSequence={removeTimerFromSequence}
-            startSequence={startSequence}
-            stopSequence={stopSequence}
+            jumpToSequenceTimer={sequenceActions.jumpToSequenceTimer}
+            removeTimerFromSequence={sequenceActions.removeTimerFromSequence}
+            startSequence={sequenceActions.startSequence}
+            stopSequence={sequenceActions.stopSequence}
             autoAdvance={autoAdvance}
             setAutoAdvance={setAutoAdvance}
           />
@@ -719,7 +644,7 @@ function App() {
           setNewTimerMinutes={setNewTimerMinutes}
           newTimerSeconds={newTimerSeconds}
           setNewTimerSeconds={setNewTimerSeconds}
-          addTimerToSequence={addTimerToSequence}
+          addTimerToSequence={sequenceActions.addTimerToSequence}
         />
 
         <AdvancedColorsPanel
