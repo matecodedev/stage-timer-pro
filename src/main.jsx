@@ -467,15 +467,18 @@ function App() {
   };
 
   const removeTimerFromSequence = (id) => {
-    setTimerSequence((prev) => prev.filter((timer) => timer.id !== id));
-    if (
-      shouldResetSequenceIndexAfterRemoval({
-        currentSequenceIndex,
-        sequenceLengthBeforeRemoval: timerSequence.length,
-      })
-    ) {
-      setCurrentSequenceIndex(0);
-    }
+    setTimerSequence((prev) => {
+      if (
+        shouldResetSequenceIndexAfterRemoval({
+          currentSequenceIndex,
+          sequenceLengthBeforeRemoval: prev.length,
+        })
+      ) {
+        setCurrentSequenceIndex(0);
+      }
+
+      return prev.filter((timer) => timer.id !== id);
+    });
   };
 
   const startSequence = () => {
