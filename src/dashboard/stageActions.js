@@ -8,6 +8,7 @@ export function createStageActions({
   sendDataDelayMs,
   positionRetries = 2,
   retryDelayMs = 150,
+  onStageOpenStateChange = () => {},
   logger = console,
 }) {
   const delay = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -26,10 +27,12 @@ export function createStageActions({
   const openFullscreen = async () => {
     if (openInProgress) {
       logger.log('Stage open already in progress');
+      onStageOpenStateChange('busy');
       return;
     }
 
     openInProgress = true;
+    onStageOpenStateChange('opening');
 
     try {
       logger.log('Opening stage window...');
@@ -71,7 +74,9 @@ export function createStageActions({
           logger.error('Error sending data to stage:', error);
         }
       }, sendDataDelayMs);
+      onStageOpenStateChange('ready');
     } catch (error) {
+      onStageOpenStateChange('error');
       logger.error('Error opening stage window:', error);
     } finally {
       openInProgress = false;

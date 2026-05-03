@@ -82,6 +82,7 @@ function App() {
 
   // Estado para controlar fullscreen del stage
   const [isStageFullscreen, setIsStageFullscreen] = useState(true);
+  const [stageOpenStatus, setStageOpenStatus] = useState('idle');
 
   // Referencias para acceder a los valores más actuales
   const timeConfigRef = useRef(DEFAULT_TIME_CONFIG);
@@ -519,6 +520,7 @@ function App() {
         sendStageData: sendCurrentStageData,
         createReadyDelayMs: STAGE_CREATE_READY_DELAY_MS,
         sendDataDelayMs: STAGE_SEND_DATA_DELAY_MS,
+        onStageOpenStateChange: setStageOpenStatus,
       }),
     [runTauriCommand, sendCurrentStageData],
   );
@@ -737,6 +739,7 @@ function App() {
           <StageDisplayPanel
             openFullscreen={openFullscreen}
             canOpenNativeStage={canUseNativeStage}
+            stageOpenStatus={stageOpenStatus}
           />
         </div>
 

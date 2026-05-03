@@ -80,6 +80,31 @@ describe('createStageActions', () => {
     expect(context.logger.log).toHaveBeenCalledWith('Stage open already in progress');
     vi.useRealTimers();
   });
+
+  it('reports stage open lifecycle events', async () => {
+    vi.useFakeTimers();
+    const context = createContext();
+    const actions = createStageActions(context);
+
+    const promise = actions.openFullscreen();
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(context.onStageOpenStateChange).toHaveBeenNthCalledWith(1, 'opening');
+    expect(context.onStageOpenStateChange).toHaveBeenNthCalledWith(2, 'ready');
+    vi.useRealTimers();
+  });
+
+  it('reports stage open error state when opening fails', async () => {
+    const context = createContext();
+    context.runTauriCommand.mockRejectedValueOnce(new Error('native failed'));
+    const actions = createStageActions(context);
+
+    await actions.openFullscreen();
+
+    expect(context.onStageOpenStateChange).toHaveBeenNthCalledWith(1, 'opening');
+    expect(context.onStageOpenStateChange).toHaveBeenNthCalledWith(2, 'error');
+  });
 });
 
 function createContext(overrides = {}) {
@@ -109,5 +134,6 @@ function createContext(overrides = {}) {
       error: vi.fn(),
       warn: vi.fn(),
     },
+    onStageOpenStateChange: vi.fn(),
   };
 }
