@@ -124,6 +124,20 @@ export function createLoadedSequenceTimerState(timer) {
   return createStoppedTimerState({ remainingMs: timer.totalMs });
 }
 
+export function createSequenceLoadResult({ timerSequence, index, timerInputs }) {
+  const timer = timerSequence[index];
+  if (!timer) {
+    return null;
+  }
+
+  return {
+    timer,
+    nextInputs: createLoadedSequenceTimerInputs(timerInputs, timer),
+    nextState: createLoadedSequenceTimerState(timer),
+    messageText: timer.name,
+  };
+}
+
 export function getDefaultSequenceTimerInputs() {
   return { ...DEFAULT_SEQUENCE_TIMER_INPUTS };
 }

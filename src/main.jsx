@@ -30,9 +30,8 @@ import {
   createSequenceAddResult,
   createSequenceAdvanceResult,
   createSequenceJumpResult,
+  createSequenceLoadResult,
   createCompletedSequenceState,
-  createLoadedSequenceTimerInputs,
-  createLoadedSequenceTimerState,
   createSequenceStartResult,
   createSequenceRemovalResult,
   createSequenceTimer,
@@ -505,28 +504,31 @@ function App() {
   const loadTimerFromSequence = useStableCallback((index) => {
     const sequence = sequenceRef.current;
     const inputs = timerInputsRef.current;
-    if (index >= sequence.timerSequence.length) return;
+    const loadResult = createSequenceLoadResult({
+      timerSequence: sequence.timerSequence,
+      index,
+      timerInputs: inputs,
+    });
+    if (!loadResult) return;
 
-    const timer = sequence.timerSequence[index];
-    timerInputsRef.current = createLoadedSequenceTimerInputs(inputs, timer);
-    setHours(timer.hours);
-    setMinutes(timer.minutes);
-    setSeconds(timer.seconds);
+    timerInputsRef.current = loadResult.nextInputs;
+    setHours(loadResult.timer.hours);
+    setMinutes(loadResult.timer.minutes);
+    setSeconds(loadResult.timer.seconds);
 
     // Aplicar el timer
     timerRef.current = createSequenceCountdown({
       Countdown,
       createColorThresholds,
-      timer,
+      timer: loadResult.timer,
       inputs,
     });
-    const nextState = createLoadedSequenceTimerState(timer);
-    stateRef.current = nextState;
-    setState(nextState);
+    stateRef.current = loadResult.nextState;
+    setState(loadResult.nextState);
     pushStageState();
 
     // Enviar mensaje con nombre del timer actual
-    sendTimerMessage(`${timer.name}`, SEQUENCE_MESSAGE_TTL_MS);
+    sendTimerMessage(loadResult.messageText, SEQUENCE_MESSAGE_TTL_MS);
   });
 
   const advanceToNextTimer = useStableCallback(() => {

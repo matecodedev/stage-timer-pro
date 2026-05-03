@@ -3,6 +3,7 @@ import {
   createSequenceAddResult,
   createSequenceAdvanceResult,
   createSequenceJumpResult,
+  createSequenceLoadResult,
   createSequenceRemovalResult,
   createSequenceStartResult,
   createCompletedSequenceState,
@@ -302,6 +303,63 @@ describe('dashboard sequence helpers', () => {
       warn: 5,
       neg: false,
     });
+  });
+
+  test('creates load result for a valid sequence timer index', () => {
+    expect(
+      createSequenceLoadResult({
+        timerSequence: [
+          { id: 1, name: 'Intro', hours: 0, minutes: 5, seconds: 0, totalMs: 300000 },
+        ],
+        currentSequenceIndex: 0,
+        sequenceMode: true,
+        autoAdvance: true,
+        index: 0,
+        timerInputs: {
+          hours: 0,
+          minutes: 15,
+          seconds: 0,
+          warn: 5,
+          neg: false,
+        },
+      }),
+    ).toEqual({
+      timer: { id: 1, name: 'Intro', hours: 0, minutes: 5, seconds: 0, totalMs: 300000 },
+      nextInputs: {
+        hours: 0,
+        minutes: 5,
+        seconds: 0,
+        warn: 5,
+        neg: false,
+      },
+      nextState: {
+        running: false,
+        remainingMs: 300000,
+        color: 'green',
+      },
+      messageText: 'Intro',
+    });
+  });
+
+  test('returns null load result for an invalid sequence timer index', () => {
+    expect(
+      createSequenceLoadResult({
+        timerSequence: [
+          { id: 1, name: 'Intro', hours: 0, minutes: 5, seconds: 0, totalMs: 300000 },
+        ],
+        currentSequenceIndex: 0,
+        sequenceMode: true,
+        autoAdvance: true,
+        index: 2,
+        timerInputs: {
+          hours: 0,
+          minutes: 15,
+          seconds: 0,
+          warn: 5,
+          neg: false,
+        },
+      }),
+    ).toBeNull();
   });
 
   test('creates dashboard timer state for a loaded sequence timer', () => {
