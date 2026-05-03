@@ -6,9 +6,12 @@ export function createStageActions({
   sendStageData,
   createReadyDelayMs,
   sendDataDelayMs,
+  positionRetries = 2,
+  retryDelayMs = 150,
   logger = console,
 }) {
   const delay = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
+  let openInProgress = false;
 
   const toggleStageFullscreen = async () => {
     try {
@@ -21,6 +24,13 @@ export function createStageActions({
   };
 
   const openFullscreen = async () => {
+    if (openInProgress) {
+      logger.log('Stage open already in progress');
+      return;
+    }
+
+    openInProgress = true;
+
     try {
       logger.log('Opening stage window...');
 
@@ -29,8 +39,27 @@ export function createStageActions({
 
       await delay(createReadyDelayMs);
 
-      await stageWindowClient.positionOnSecondaryMonitor();
-      logger.log('Stage positioned on secondary monitor');
+      let positioned = false;
+      for (let attempt = 1; attempt <= Math.max(1, positionRetries); attempt += 1) {
+        try {
+          await stageWindowClient.positionOnSecondaryMonitor();
+          logger.log('Stage positioned on secondary monitor');
+          positioned = true;
+          break;
+        } catch (error) {
+          logger.warn?.(
+            `Failed to position stage on secondary monitor (attempt ${attempt}/${Math.max(1, positionRetries)})`,
+            error,
+          );
+          if (attempt < Math.max(1, positionRetries)) {
+            await delay(retryDelayMs);
+          }
+        }
+      }
+
+      if (!positioned) {
+        logger.warn?.('Stage positioning retries exhausted; continuing without reposition');
+      }
 
       await runTauriCommand('focus_stage');
       logger.log('Stage focused');
@@ -44,6 +73,8 @@ export function createStageActions({
       }, sendDataDelayMs);
     } catch (error) {
       logger.error('Error opening stage window:', error);
+    } finally {
+      openInProgress = false;
     }
   };
 
