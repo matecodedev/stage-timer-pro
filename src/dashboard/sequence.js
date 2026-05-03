@@ -20,6 +20,16 @@ export function shouldResetSequenceIndexAfterRemoval({
   return currentSequenceIndex >= sequenceLengthBeforeRemoval - 1;
 }
 
+export function createSequenceRemovalResult({ timerSequence, currentSequenceIndex, idToRemove }) {
+  return {
+    timerSequence: timerSequence.filter((timer) => timer.id !== idToRemove),
+    shouldResetIndex: shouldResetSequenceIndexAfterRemoval({
+      currentSequenceIndex,
+      sequenceLengthBeforeRemoval: timerSequence.length,
+    }),
+  };
+}
+
 export function getNextSequenceStep({ currentSequenceIndex, sequenceLength }) {
   const nextIndex = currentSequenceIndex + 1;
 
@@ -50,6 +60,25 @@ export function createSequenceJumpState(sequence, currentSequenceIndex) {
   return {
     ...sequence,
     currentSequenceIndex,
+  };
+}
+
+export function createSequenceAdvanceResult(sequence) {
+  const step = getNextSequenceStep({
+    currentSequenceIndex: sequence.currentSequenceIndex,
+    sequenceLength: sequence.timerSequence.length,
+  });
+
+  if (step.type === 'next') {
+    return {
+      ...step,
+      sequence: createSequenceJumpState(sequence, step.nextIndex),
+    };
+  }
+
+  return {
+    ...step,
+    sequence: createCompletedSequenceState(sequence),
   };
 }
 

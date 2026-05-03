@@ -1,5 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import {
+  createSequenceAdvanceResult,
+  createSequenceRemovalResult,
   createCompletedSequenceState,
   createLoadedSequenceTimerInputs,
   createLoadedSequenceTimerState,
@@ -53,6 +55,32 @@ describe('dashboard sequence helpers', () => {
     ).toBe(true);
   });
 
+  test('creates sequence removal result with filtered timers and reset flag', () => {
+    expect(
+      createSequenceRemovalResult({
+        timerSequence: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        currentSequenceIndex: 2,
+        idToRemove: 3,
+      }),
+    ).toEqual({
+      timerSequence: [{ id: 1 }, { id: 2 }],
+      shouldResetIndex: true,
+    });
+  });
+
+  test('keeps current sequence index when removing a different timer', () => {
+    expect(
+      createSequenceRemovalResult({
+        timerSequence: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        currentSequenceIndex: 1,
+        idToRemove: 3,
+      }),
+    ).toEqual({
+      timerSequence: [{ id: 1 }, { id: 2 }],
+      shouldResetIndex: false,
+    });
+  });
+
   test('returns the next sequence timer step when another timer exists', () => {
     expect(
       getNextSequenceStep({
@@ -69,6 +97,46 @@ describe('dashboard sequence helpers', () => {
         sequenceLength: 2,
       }),
     ).toEqual({ type: 'completed', nextIndex: 0 });
+  });
+
+  test('creates next-step advance result for a sequence with remaining timers', () => {
+    expect(
+      createSequenceAdvanceResult({
+        timerSequence: [{ id: 1 }, { id: 2 }],
+        currentSequenceIndex: 0,
+        sequenceMode: true,
+        autoAdvance: true,
+      }),
+    ).toEqual({
+      type: 'next',
+      nextIndex: 1,
+      sequence: {
+        timerSequence: [{ id: 1 }, { id: 2 }],
+        currentSequenceIndex: 1,
+        sequenceMode: true,
+        autoAdvance: true,
+      },
+    });
+  });
+
+  test('creates completed advance result when sequence reaches the end', () => {
+    expect(
+      createSequenceAdvanceResult({
+        timerSequence: [{ id: 1 }, { id: 2 }],
+        currentSequenceIndex: 1,
+        sequenceMode: true,
+        autoAdvance: true,
+      }),
+    ).toEqual({
+      type: 'completed',
+      nextIndex: 0,
+      sequence: {
+        timerSequence: [{ id: 1 }, { id: 2 }],
+        currentSequenceIndex: 0,
+        sequenceMode: false,
+        autoAdvance: true,
+      },
+    });
   });
 
   test('creates a completed sequence state that disables sequence mode and resets index', () => {

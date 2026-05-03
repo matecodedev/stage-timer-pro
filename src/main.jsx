@@ -27,16 +27,16 @@ import { createBrandingActions } from './dashboard/brandingActions';
 import { createDashboardBrandingPayload } from './dashboard/branding';
 import { createDashboardStageStatePayload } from './dashboard/stageState';
 import {
+  createSequenceAdvanceResult,
   createCompletedSequenceState,
   createLoadedSequenceTimerInputs,
   createLoadedSequenceTimerState,
   createSequenceJumpState,
+  createSequenceRemovalResult,
   createSequenceTimer,
   createStartedSequenceState,
   getDefaultSequenceTimerInputs,
-  getNextSequenceStep,
   scheduleSequenceTimerAutostart,
-  shouldResetSequenceIndexAfterRemoval,
 } from './dashboard/sequence';
 import { useCloseStageOnExit } from './dashboard/hooks/useCloseStageOnExit';
 import { useDashboardKeyboardShortcuts } from './dashboard/hooks/useDashboardKeyboardShortcuts';
@@ -465,16 +465,17 @@ function App() {
 
   const removeTimerFromSequence = (id) => {
     setTimerSequence((prev) => {
-      if (
-        shouldResetSequenceIndexAfterRemoval({
-          currentSequenceIndex,
-          sequenceLengthBeforeRemoval: prev.length,
-        })
-      ) {
+      const removalResult = createSequenceRemovalResult({
+        timerSequence: prev,
+        currentSequenceIndex,
+        idToRemove: id,
+      });
+
+      if (removalResult.shouldResetIndex) {
         setCurrentSequenceIndex(0);
       }
 
-      return prev.filter((timer) => timer.id !== id);
+      return removalResult.timerSequence;
     });
   };
 
@@ -525,16 +526,10 @@ function App() {
 
   const advanceToNextTimer = useStableCallback(() => {
     const sequence = sequenceRef.current;
-    const sequenceStep = getNextSequenceStep({
-      currentSequenceIndex: sequence.currentSequenceIndex,
-      sequenceLength: sequence.timerSequence.length,
-    });
+    const sequenceStep = createSequenceAdvanceResult(sequence);
 
     if (sequenceStep.type === 'next') {
-      sequenceRef.current = {
-        ...sequence,
-        currentSequenceIndex: sequenceStep.nextIndex,
-      };
+      sequenceRef.current = sequenceStep.sequence;
       setCurrentSequenceIndex(sequenceStep.nextIndex);
       loadTimerFromSequence(sequenceStep.nextIndex);
       // Auto-start el siguiente timer
@@ -545,7 +540,7 @@ function App() {
       });
     } else {
       // Secuencia completada
-      sequenceRef.current = createCompletedSequenceState(sequence);
+      sequenceRef.current = sequenceStep.sequence;
       setSequenceMode(false);
       setCurrentSequenceIndex(0);
       sendTimerMessage('SECUENCIA COMPLETADA', SEQUENCE_COMPLETED_TTL_MS);
