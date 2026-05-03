@@ -68,6 +68,7 @@ import { createSequenceMessageActions } from './dashboard/sequenceMessageActions
 import { createSequenceCountdown } from './dashboard/sequenceTimerFactory';
 import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
+import { createStoppedTimerState } from './dashboard/timerState';
 
 function App() {
   // Estados del timer (ahora con horas, minutos, segundos)
@@ -129,7 +130,7 @@ function App() {
 
   const timerRef = useRef(null);
   const totalMs = calculateTotalMs({ hours, minutes, seconds });
-  const [state, setState] = useState({ running: false, remainingMs: totalMs, color: 'green' });
+  const [state, setState] = useState(createStoppedTimerState({ remainingMs: totalMs }));
   const stateRef = useLatest(state);
   const timerInputsRef = useLatest({
     hours,
@@ -181,7 +182,7 @@ function App() {
       warnMs: warn * 60_000,
       negativeMode: neg,
     });
-    setState({ running: false, remainingMs: totalMs, color: 'green' });
+    setState(createStoppedTimerState({ remainingMs: totalMs }));
 
     // Solicitar permisos de notificación al iniciar
     requestNotificationPermission();
@@ -250,7 +251,7 @@ function App() {
       negativeMode: inputs.neg,
       colorThresholds: thresholds,
     });
-    const nextState = { running: false, remainingMs: totalMs, color: 'green' };
+    const nextState = createStoppedTimerState({ remainingMs: totalMs });
     stateRef.current = nextState;
     setState(nextState);
     pushStageState();
@@ -345,12 +346,7 @@ function App() {
     if (!timerRef.current) return;
     timerRef.current.stop();
     pushStageState();
-    const nextState = {
-      ...stateRef.current,
-      remainingMs: timerRef.current.remainingMs,
-      running: false,
-      color: 'green',
-    };
+    const nextState = createStoppedTimerState({ remainingMs: timerRef.current.remainingMs });
     stateRef.current = nextState;
     setState(nextState);
   });
