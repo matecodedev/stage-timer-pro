@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
+import { getOrCreateReactRoot } from './shared/reactRoot';
 import './index.css';
 import { formatMs } from './timer';
 import { listen } from '@tauri-apps/api/event';
@@ -565,4 +566,4 @@ function Stage() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Stage />);
+getOrCreateReactRoot(document.getElementById('root'), ReactDOM.createRoot).render(<Stage />);

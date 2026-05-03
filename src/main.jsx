@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from './shared/hooks/useLatest';
 import { useStableCallback } from './shared/hooks/useStableCallback';
+import { getOrCreateReactRoot } from './shared/reactRoot';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Countdown, formatMs } from './timer';
@@ -800,4 +801,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+getOrCreateReactRoot(document.getElementById('root'), ReactDOM.createRoot).render(<App />);
