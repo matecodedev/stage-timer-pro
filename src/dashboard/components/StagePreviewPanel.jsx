@@ -1,4 +1,5 @@
 import { formatDashboardTime } from '../timeConfig.js';
+import { getPreviewSequenceLabel } from '../preview.js';
 
 export function StagePreviewPanel({
   state,
@@ -119,9 +120,10 @@ export function StagePreviewPanel({
             <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">
               <div className="font-medium text-gray-600 dark:text-gray-300">Secuencia</div>
               <div className="text-gray-800 dark:text-gray-200">
-                {state.currentSequenceIndex !== null
-                  ? `${state.currentSequenceIndex + 1}/${timerSequence.length}`
-                  : 'Individual'}
+                {getPreviewSequenceLabel({
+                  currentSequenceIndex: state.currentSequenceIndex,
+                  sequenceLength: timerSequence.length,
+                })}
               </div>
             </div>
             <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded">

@@ -11,3 +11,15 @@ export function getPreviewBackgroundColor({ blackBackground, color }) {
 export function getPreviewTextColor() {
   return '#FFFFFF';
 }
+
+export function getPreviewSequenceLabel({ currentSequenceIndex, sequenceLength }) {
+  if (
+    !Number.isInteger(currentSequenceIndex) ||
+    !Number.isInteger(sequenceLength) ||
+    sequenceLength <= 0
+  ) {
+    return 'Individual';
+  }
+
+  return `${currentSequenceIndex + 1}/${sequenceLength}`;
+}

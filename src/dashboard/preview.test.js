@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { getPreviewBackgroundColor, getPreviewTextColor } from './preview.js';
+import {
+  getPreviewBackgroundColor,
+  getPreviewSequenceLabel,
+  getPreviewTextColor,
+} from './preview.js';
 
 describe('dashboard preview helpers', () => {
   test('uses black background when enabled', () => {
@@ -21,5 +25,21 @@ describe('dashboard preview helpers', () => {
 
   test('keeps preview text white', () => {
     expect(getPreviewTextColor()).toBe('#FFFFFF');
+  });
+
+  test('shows individual mode when sequence index is missing or invalid', () => {
+    expect(getPreviewSequenceLabel({ currentSequenceIndex: undefined, sequenceLength: 2 })).toBe(
+      'Individual',
+    );
+    expect(getPreviewSequenceLabel({ currentSequenceIndex: Number.NaN, sequenceLength: 2 })).toBe(
+      'Individual',
+    );
+    expect(getPreviewSequenceLabel({ currentSequenceIndex: 0, sequenceLength: 0 })).toBe(
+      'Individual',
+    );
+  });
+
+  test('formats active sequence position when index and length are valid', () => {
+    expect(getPreviewSequenceLabel({ currentSequenceIndex: 1, sequenceLength: 3 })).toBe('2/3');
   });
 });
