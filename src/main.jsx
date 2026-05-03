@@ -65,7 +65,11 @@ import {
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
 import { createSequenceMessageActions } from './dashboard/sequenceMessageActions';
-import { applySequenceLoadResult } from './dashboard/sequenceLoader';
+import {
+  applySequenceAdvanceResult,
+  applySequenceJumpResult,
+  applySequenceLoadResult,
+} from './dashboard/sequenceLoader';
 import { createSequenceCountdown } from './dashboard/sequenceTimerFactory';
 import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
@@ -528,46 +532,42 @@ function App() {
     });
   });
 
+  const scheduleSequenceAutostart = useStableCallback(() => {
+    scheduleSequenceTimerAutostart({
+      timerRef,
+      pushStageState,
+      delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
+    });
+  });
+
   const advanceToNextTimer = useStableCallback(() => {
     const sequence = sequenceRef.current;
     const sequenceStep = createSequenceAdvanceResult(sequence);
 
-    if (sequenceStep.type === 'next') {
-      sequenceRef.current = sequenceStep.sequence;
-      setCurrentSequenceIndex(sequenceStep.nextIndex);
-      loadTimerFromSequence(sequenceStep.nextIndex);
-      // Auto-start el siguiente timer
-      scheduleSequenceTimerAutostart({
-        timerRef,
-        pushStageState,
-        delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
-      });
-    } else {
-      // Secuencia completada
-      sequenceRef.current = sequenceStep.sequence;
-      setSequenceMode(false);
-      setCurrentSequenceIndex(0);
-      sendTimerMessage('SECUENCIA COMPLETADA', SEQUENCE_COMPLETED_TTL_MS);
-    }
+    applySequenceAdvanceResult({
+      sequenceStep,
+      sequenceRef,
+      setSequenceMode,
+      setCurrentSequenceIndex,
+      loadTimerFromSequence,
+      scheduleAutostart: scheduleSequenceAutostart,
+      sendTimerMessage,
+      completedMessageTtlMs: SEQUENCE_COMPLETED_TTL_MS,
+    });
   });
 
   const jumpToSequenceTimer = (index) => {
     const sequence = sequenceRef.current;
     const jumpResult = createSequenceJumpResult(sequence, index);
-    if (!jumpResult) return;
 
-    sequenceRef.current = jumpResult.sequence;
-    setCurrentSequenceIndex(jumpResult.jumpIndex);
-    loadTimerFromSequence(jumpResult.jumpIndex);
-
-    // Si estaba corriendo, continuar con el nuevo timer
-    if (stateRef.current.running) {
-      scheduleSequenceTimerAutostart({
-        timerRef,
-        pushStageState,
-        delayMs: SEQUENCE_AUTOSTART_DELAY_MS,
-      });
-    }
+    applySequenceJumpResult({
+      jumpResult,
+      sequenceRef,
+      setCurrentSequenceIndex,
+      loadTimerFromSequence,
+      shouldAutostart: stateRef.current.running,
+      scheduleAutostart: scheduleSequenceAutostart,
+    });
   };
 
   // Enviar estado al Stage

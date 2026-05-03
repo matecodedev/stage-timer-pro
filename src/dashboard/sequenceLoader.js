@@ -37,3 +37,55 @@ export function applySequenceLoadResult({
 
   return true;
 }
+
+export function applySequenceAdvanceResult({
+  sequenceStep,
+  sequenceRef,
+  setSequenceMode,
+  setCurrentSequenceIndex,
+  loadTimerFromSequence,
+  scheduleAutostart,
+  sendTimerMessage,
+  completedMessageTtlMs,
+}) {
+  if (!sequenceStep) {
+    return false;
+  }
+
+  sequenceRef.current = sequenceStep.sequence;
+
+  if (sequenceStep.type === 'next') {
+    setCurrentSequenceIndex(sequenceStep.nextIndex);
+    loadTimerFromSequence(sequenceStep.nextIndex);
+    scheduleAutostart();
+    return true;
+  }
+
+  setSequenceMode(false);
+  setCurrentSequenceIndex(0);
+  sendTimerMessage('SECUENCIA COMPLETADA', completedMessageTtlMs);
+  return true;
+}
+
+export function applySequenceJumpResult({
+  jumpResult,
+  sequenceRef,
+  setCurrentSequenceIndex,
+  loadTimerFromSequence,
+  shouldAutostart,
+  scheduleAutostart,
+}) {
+  if (!jumpResult) {
+    return false;
+  }
+
+  sequenceRef.current = jumpResult.sequence;
+  setCurrentSequenceIndex(jumpResult.jumpIndex);
+  loadTimerFromSequence(jumpResult.jumpIndex);
+
+  if (shouldAutostart) {
+    scheduleAutostart();
+  }
+
+  return true;
+}
