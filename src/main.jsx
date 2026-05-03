@@ -58,13 +58,13 @@ import {
   STAGE_SEND_DATA_DELAY_MS,
   TIMER_TICK_INTERVAL_MS,
 } from './dashboard/constants';
-import { createSequenceMessagePayload } from './dashboard/messages';
 import { createMessageActions } from './dashboard/messageActions';
 import { createNativeActions } from './dashboard/nativeActions';
 import {
   getPreviewBackgroundColor as resolvePreviewBackgroundColor,
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
+import { createSequenceMessageActions } from './dashboard/sequenceMessageActions';
 import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
 
@@ -570,24 +570,6 @@ function App() {
     }
   };
 
-  const sendTimerMessage = useStableCallback(async (text, ttlMs = SEQUENCE_MESSAGE_TTL_MS) => {
-    const messageData = createSequenceMessagePayload({ text, ttlMs });
-
-    // Actualizar estado global
-    setCurrentGlobalMessage(messageData);
-
-    await stageWindowClient.emitMessage(messageData);
-
-    // Actualizar estado
-    await pushStageState();
-
-    // Limpiar mensaje después del TTL
-    setTimeout(() => {
-      setCurrentGlobalMessage(null);
-      pushStageState();
-    }, ttlMs);
-  });
-
   // Enviar estado al Stage
   const pushStageState = useStableCallback(async () => {
     if (!timerRef.current) return;
@@ -604,6 +586,20 @@ function App() {
     // Enviar al stage window local
     await stageWindowClient.emitState(payload);
   });
+  const sequenceMessageActions = useMemo(
+    () =>
+      createSequenceMessageActions({
+        stageWindowClient,
+        pushStageState,
+        setCurrentGlobalMessage,
+      }),
+    [pushStageState],
+  );
+
+  const sendTimerMessage = useStableCallback(async (text, ttlMs = SEQUENCE_MESSAGE_TTL_MS) => {
+    await sequenceMessageActions.sendTimerMessage(text, ttlMs);
+  });
+
   const messageActions = useMemo(
     () =>
       createMessageActions({
