@@ -55,6 +55,7 @@ import {
   getPreviewBackgroundColor as resolvePreviewBackgroundColor,
   getPreviewTextColor as resolvePreviewTextColor,
 } from './dashboard/preview';
+import { loadDashboardSettings, saveDashboardSettings } from './dashboard/settingsPersistence';
 import { createSequenceMessageActions } from './dashboard/sequenceMessageActions';
 import { createSequenceCountdown } from './dashboard/sequenceTimerFactory';
 import { createStageActions } from './dashboard/stageActions';
@@ -99,6 +100,7 @@ function App() {
   const [logoSize, setLogoSize] = useState(DEFAULT_BRANDING.logoSize); // Tamaño en píxeles, sincronizado con stage
   const [blackBackground, setBlackBackground] = useState(DEFAULT_BRANDING.blackBackground);
   const [showBranding, setShowBranding] = useState(DEFAULT_BRANDING.showBranding);
+  const [settingsHydrated, setSettingsHydrated] = useState(false);
 
   // Estados globales para mensajes y branding actual
   const [currentGlobalMessage, setCurrentGlobalMessage] = useState(null);
@@ -140,6 +142,109 @@ function App() {
   });
   const fullscreenRef = useLatest(isStageFullscreen);
   const canUseNativeStage = isTauriRuntime();
+
+  useEffect(() => {
+    const saved = loadDashboardSettings();
+    if (saved) {
+      if (saved.timer) {
+        if (Number.isFinite(saved.timer.hours)) setHours(saved.timer.hours);
+        if (Number.isFinite(saved.timer.minutes)) setMinutes(saved.timer.minutes);
+        if (Number.isFinite(saved.timer.seconds)) setSeconds(saved.timer.seconds);
+        if (Number.isFinite(saved.timer.warn)) setWarn(saved.timer.warn);
+        if (typeof saved.timer.neg === 'boolean') setNeg(saved.timer.neg);
+      }
+
+      if (saved.sequence && typeof saved.sequence.autoAdvance === 'boolean') {
+        setAutoAdvance(saved.sequence.autoAdvance);
+      }
+
+      if (saved.message) {
+        if (Number.isFinite(saved.message.ttl)) setMessageTtl(saved.message.ttl);
+        if (typeof saved.message.persist === 'boolean') setPersistMsg(saved.message.persist);
+        if (Number.isFinite(saved.message.fontSize)) setFontSize(saved.message.fontSize);
+        if (typeof saved.message.blinking === 'boolean') setBlinking(saved.message.blinking);
+        if (typeof saved.message.replaceTimer === 'boolean')
+          setReplaceTimer(saved.message.replaceTimer);
+      }
+
+      if (saved.branding) {
+        if (typeof saved.branding.logo === 'string') setLogo(saved.branding.logo);
+        if (Number.isFinite(saved.branding.logoSize)) setLogoSize(saved.branding.logoSize);
+        if (typeof saved.branding.blackBackground === 'boolean')
+          setBlackBackground(saved.branding.blackBackground);
+        if (typeof saved.branding.showBranding === 'boolean')
+          setShowBranding(saved.branding.showBranding);
+      }
+
+      if (saved.timeDisplay) {
+        if (typeof saved.timeDisplay.showCurrentTime === 'boolean')
+          setShowCurrentTime(saved.timeDisplay.showCurrentTime);
+        if (typeof saved.timeDisplay.timeFormat24h === 'boolean')
+          setTimeFormat24h(saved.timeDisplay.timeFormat24h);
+        if (typeof saved.timeDisplay.showSeconds === 'boolean')
+          setShowSeconds(saved.timeDisplay.showSeconds);
+        if (typeof saved.timeDisplay.timePosition === 'string')
+          setTimePosition(saved.timeDisplay.timePosition);
+      }
+
+      if (saved.colors) {
+        if (typeof saved.colors.enableAdvancedColors === 'boolean')
+          setEnableAdvancedColors(saved.colors.enableAdvancedColors);
+        if (saved.colors.thresholds && typeof saved.colors.thresholds === 'object') {
+          setColorThresholds((prev) => ({ ...prev, ...saved.colors.thresholds }));
+        }
+      }
+    }
+
+    setSettingsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!settingsHydrated) return;
+
+    saveDashboardSettings({
+      settings: {
+        timer: { hours, minutes, seconds, warn, neg },
+        sequence: { autoAdvance },
+        message: {
+          ttl: messageTtl,
+          persist: persistMsg,
+          fontSize,
+          blinking,
+          replaceTimer,
+        },
+        branding: { logo, logoSize, blackBackground, showBranding },
+        timeDisplay: { showCurrentTime, timeFormat24h, showSeconds, timePosition },
+        colors: {
+          enableAdvancedColors,
+          thresholds: colorThresholds,
+        },
+      },
+    });
+  }, [
+    settingsHydrated,
+    hours,
+    minutes,
+    seconds,
+    warn,
+    neg,
+    autoAdvance,
+    messageTtl,
+    persistMsg,
+    fontSize,
+    blinking,
+    replaceTimer,
+    logo,
+    logoSize,
+    blackBackground,
+    showBranding,
+    showCurrentTime,
+    timeFormat24h,
+    showSeconds,
+    timePosition,
+    enableAdvancedColors,
+    colorThresholds,
+  ]);
 
   const runTauriCommand = useStableCallback(async (commandName, args) => {
     if (!isTauriRuntime()) {
