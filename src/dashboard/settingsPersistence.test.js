@@ -21,6 +21,15 @@ describe('dashboard settings persistence', () => {
     expect(loadDashboardSettings({ storage })).toBeNull();
   });
 
+  test('returns null when storage read fails', () => {
+    const storage = createStorage();
+    storage.getItem.mockImplementationOnce(() => {
+      throw new Error('storage blocked');
+    });
+
+    expect(loadDashboardSettings({ storage })).toBeNull();
+  });
+
   test('returns null when saved settings are invalid json', () => {
     const storage = createStorage();
     storage.setItem(DASHBOARD_SETTINGS_STORAGE_KEY, '{invalid');

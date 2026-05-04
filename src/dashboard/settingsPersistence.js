@@ -73,7 +73,13 @@ export function normalizeDashboardSettings(raw) {
 export function loadDashboardSettings({ storage = globalThis?.localStorage } = {}) {
   if (!storage?.getItem) return null;
 
-  const raw = storage.getItem(DASHBOARD_SETTINGS_STORAGE_KEY);
+  let raw;
+  try {
+    raw = storage.getItem(DASHBOARD_SETTINGS_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+
   if (!raw) return null;
 
   try {
