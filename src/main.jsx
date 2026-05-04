@@ -62,6 +62,8 @@ import { createStageActions } from './dashboard/stageActions';
 import { calculateTotalMs, createColorThresholds, createTimeConfig } from './dashboard/timeConfig';
 import { createStoppedTimerState } from './dashboard/timerState';
 
+const STAGE_STATUS_RESET_DELAY_MS = 3000;
+
 function App() {
   // Estados del timer (ahora con horas, minutos, segundos)
   const [hours, setHours] = useState(DEFAULT_TIMER_INPUTS.hours);
@@ -246,6 +248,16 @@ function App() {
     enableAdvancedColors,
     colorThresholds,
   ]);
+
+  useEffect(() => {
+    if (!['ready', 'error', 'busy'].includes(stageOpenStatus)) return;
+
+    const timeoutId = setTimeout(() => {
+      setStageOpenStatus('idle');
+    }, STAGE_STATUS_RESET_DELAY_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [stageOpenStatus]);
 
   const runTauriCommand = useStableCallback(async (commandName, args) => {
     if (!isTauriRuntime()) {

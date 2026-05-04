@@ -1,26 +1,13 @@
 import { Button } from './Button';
+import { getStageStatusViewModel } from '../stageStatus.js';
 
 export function StageDisplayPanel({
   openFullscreen,
   canOpenNativeStage = true,
   stageOpenStatus = 'idle',
 }) {
-  const isOpening = stageOpenStatus === 'opening';
-  const openButtonLabel = isOpening ? '⏳ Abriendo Stage...' : '🖥️ Abrir Stage Fullscreen';
-
-  const statusTextMap = {
-    opening: 'Abriendo y posicionando Stage...',
-    ready: 'Stage listo',
-    error: 'No se pudo abrir Stage. Reintentá.',
-    busy: 'Apertura en progreso. Esperá un momento.',
-    idle: null,
-  };
-
-  const statusText = statusTextMap[stageOpenStatus] ?? null;
-  const statusClassName =
-    stageOpenStatus === 'error'
-      ? 'text-xs text-red-500 dark:text-red-400'
-      : 'text-xs text-emerald-500 dark:text-emerald-400';
+  const { isOpening, openButtonLabel, statusText, statusClassName } =
+    getStageStatusViewModel(stageOpenStatus);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-3">
