@@ -87,5 +87,9 @@ export function loadDashboardSettings({ storage = globalThis?.localStorage } = {
 export function saveDashboardSettings({ settings, storage = globalThis?.localStorage } = {}) {
   if (!storage?.setItem || !settings || typeof settings !== 'object') return;
 
-  storage.setItem(DASHBOARD_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  try {
+    storage.setItem(DASHBOARD_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore storage errors (quota exceeded, disabled storage, privacy mode).
+  }
 }

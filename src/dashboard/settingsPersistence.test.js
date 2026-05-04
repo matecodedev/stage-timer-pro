@@ -83,4 +83,18 @@ describe('dashboard settings persistence', () => {
       JSON.stringify(settings),
     );
   });
+
+  test('does not throw when storage write fails', () => {
+    const storage = createStorage();
+    storage.setItem.mockImplementationOnce(() => {
+      throw new Error('quota exceeded');
+    });
+
+    expect(() =>
+      saveDashboardSettings({
+        storage,
+        settings: { timer: { hours: 0, minutes: 5, seconds: 0, warn: 5, neg: false } },
+      }),
+    ).not.toThrow();
+  });
 });
