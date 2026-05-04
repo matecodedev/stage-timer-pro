@@ -79,6 +79,26 @@ describe('dashboard settings persistence', () => {
     });
   });
 
+  test('clamps normalized numeric values to safe ranges', () => {
+    expect(
+      normalizeDashboardSettings({
+        timer: { hours: 999, minutes: -5, seconds: 88, warn: -2, neg: true },
+        message: { ttl: 0, fontSize: 5000 },
+        branding: { logoSize: -100 },
+        colors: {
+          thresholds: { critical: -1, warning: 200, caution: 999, good: -40 },
+        },
+      }),
+    ).toEqual({
+      timer: { hours: 23, minutes: 0, seconds: 59, warn: 0, neg: true },
+      message: { ttl: 1, fontSize: 400 },
+      branding: { logoSize: 40 },
+      colors: {
+        thresholds: { critical: 0, warning: 120, caution: 120, good: 0 },
+      },
+    });
+  });
+
   test('saves settings as json', () => {
     const storage = createStorage();
     const settings = {

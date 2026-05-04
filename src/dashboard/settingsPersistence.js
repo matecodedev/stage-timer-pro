@@ -1,5 +1,9 @@
 export const DASHBOARD_SETTINGS_STORAGE_KEY = 'stage-timer/dashboard-settings/v1';
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function normalizeDashboardSettings(raw) {
   if (!raw || typeof raw !== 'object') return null;
 
@@ -7,10 +11,10 @@ export function normalizeDashboardSettings(raw) {
 
   if (raw.timer && typeof raw.timer === 'object') {
     const timer = {};
-    if (Number.isFinite(raw.timer.hours)) timer.hours = raw.timer.hours;
-    if (Number.isFinite(raw.timer.minutes)) timer.minutes = raw.timer.minutes;
-    if (Number.isFinite(raw.timer.seconds)) timer.seconds = raw.timer.seconds;
-    if (Number.isFinite(raw.timer.warn)) timer.warn = raw.timer.warn;
+    if (Number.isFinite(raw.timer.hours)) timer.hours = clamp(raw.timer.hours, 0, 23);
+    if (Number.isFinite(raw.timer.minutes)) timer.minutes = clamp(raw.timer.minutes, 0, 59);
+    if (Number.isFinite(raw.timer.seconds)) timer.seconds = clamp(raw.timer.seconds, 0, 59);
+    if (Number.isFinite(raw.timer.warn)) timer.warn = clamp(raw.timer.warn, 0, 120);
     if (typeof raw.timer.neg === 'boolean') timer.neg = raw.timer.neg;
     if (Object.keys(timer).length > 0) normalized.timer = timer;
   }
@@ -25,9 +29,10 @@ export function normalizeDashboardSettings(raw) {
 
   if (raw.message && typeof raw.message === 'object') {
     const message = {};
-    if (Number.isFinite(raw.message.ttl)) message.ttl = raw.message.ttl;
+    if (Number.isFinite(raw.message.ttl)) message.ttl = clamp(raw.message.ttl, 1, 3600);
     if (typeof raw.message.persist === 'boolean') message.persist = raw.message.persist;
-    if (Number.isFinite(raw.message.fontSize)) message.fontSize = raw.message.fontSize;
+    if (Number.isFinite(raw.message.fontSize))
+      message.fontSize = clamp(raw.message.fontSize, 40, 400);
     if (typeof raw.message.blinking === 'boolean') message.blinking = raw.message.blinking;
     if (typeof raw.message.replaceTimer === 'boolean')
       message.replaceTimer = raw.message.replaceTimer;
@@ -37,7 +42,8 @@ export function normalizeDashboardSettings(raw) {
   if (raw.branding && typeof raw.branding === 'object') {
     const branding = {};
     if (typeof raw.branding.logo === 'string') branding.logo = raw.branding.logo;
-    if (Number.isFinite(raw.branding.logoSize)) branding.logoSize = raw.branding.logoSize;
+    if (Number.isFinite(raw.branding.logoSize))
+      branding.logoSize = clamp(raw.branding.logoSize, 40, 600);
     if (typeof raw.branding.blackBackground === 'boolean')
       branding.blackBackground = raw.branding.blackBackground;
     if (typeof raw.branding.showBranding === 'boolean')
@@ -62,8 +68,18 @@ export function normalizeDashboardSettings(raw) {
     const colors = {};
     if (typeof raw.colors.enableAdvancedColors === 'boolean')
       colors.enableAdvancedColors = raw.colors.enableAdvancedColors;
-    if (raw.colors.thresholds && typeof raw.colors.thresholds === 'object')
-      colors.thresholds = raw.colors.thresholds;
+    if (raw.colors.thresholds && typeof raw.colors.thresholds === 'object') {
+      const thresholds = {};
+      if (Number.isFinite(raw.colors.thresholds.critical))
+        thresholds.critical = clamp(raw.colors.thresholds.critical, 0, 120);
+      if (Number.isFinite(raw.colors.thresholds.warning))
+        thresholds.warning = clamp(raw.colors.thresholds.warning, 0, 120);
+      if (Number.isFinite(raw.colors.thresholds.caution))
+        thresholds.caution = clamp(raw.colors.thresholds.caution, 0, 120);
+      if (Number.isFinite(raw.colors.thresholds.good))
+        thresholds.good = clamp(raw.colors.thresholds.good, 0, 100);
+      if (Object.keys(thresholds).length > 0) colors.thresholds = thresholds;
+    }
     if (Object.keys(colors).length > 0) normalized.colors = colors;
   }
 
