@@ -1,11 +1,11 @@
 [package]
 name = "stage-timer"
-version = "0.1.0"
+version = "1.0.4"
 description = "Aplicación profesional de timer para eventos con branding personalizable y soporte dual monitor"
 authors = ["MateCode <info@matecode.dev>"]
 license = "MIT"
-repository = "https://github.com/matecode/stage-timer"
-homepage = "https://matecode.dev/stage-timer"
+repository = "https://github.com/matecodedev/stage-timer-pro"
+homepage = "https://matecode.dev"
 keywords = ["timer", "events", "presentation", "dual-monitor", "professional"]
 categories = ["multimedia", "gui"]
 edition = "2021"
@@ -14,7 +14,7 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "1", features = [ "api-all"] }
+tauri = { version = "1", features = [ "window-set-size", "window-unmaximize", "window-set-title", "window-set-max-size", "window-set-always-on-top", "window-set-min-size", "window-center", "window-show", "window-hide", "window-set-resizable", "window-set-position", "window-set-focus", "window-unminimize", "window-start-dragging", "window-set-fullscreen", "window-set-decorations", "window-set-cursor-visible", "global-shortcut-all", "window-maximize", "window-close", "notification-all", "window-minimize"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }

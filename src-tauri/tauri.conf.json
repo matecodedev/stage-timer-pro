@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "Stage Timer Pro",
-    "version": "1.0.2"
+    "version": "1.0.4"
   },
   "tauri": {
     "bundle": {
@@ -20,14 +20,26 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "copyright": "© 2025 MateCode. Todos los derechos reservados.",
+      "copyright": "© 2025 MateCode. Licencia MIT.",
       "shortDescription": "Timer profesional para eventos",
       "longDescription": "Aplicación profesional de timer para eventos con branding personalizable, soporte dual monitor, sistema de mensajes avanzado y funcionalidades para presentaciones profesionales.",
-      "targets": ["dmg", "msi", "deb", "appimage"],
+      "targets": ["msi", "nsis"],
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
-        "timestampUrl": ""
+        "timestampUrl": "",
+        "wix": {
+          "language": "en-US"
+        },
+        "nsis": {
+          "license": "../LICENSE",
+          "installerIcon": "icons/icon.ico",
+          "headerImage": null,
+          "sidebarImage": null,
+          "installMode": "currentUser",
+          "languages": ["English", "Spanish"],
+          "displayLanguageSelector": true
+        }
       }
     },
     "security": {
@@ -49,12 +61,85 @@
       }
     ],
     "allowlist": {
-      "all": true,
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": false
+      },
+      "dialog": {
+        "all": false,
+        "ask": false,
+        "confirm": false,
+        "message": false,
+        "open": false,
+        "save": false
+      },
+      "window": {
+        "all": false,
+        "close": true,
+        "hide": true,
+        "show": true,
+        "maximize": true,
+        "minimize": true,
+        "unmaximize": true,
+        "unminimize": true,
+        "startDragging": true,
+        "print": false,
+        "setResizable": true,
+        "setTitle": true,
+        "setSize": true,
+        "setMinSize": true,
+        "setMaxSize": true,
+        "setPosition": true,
+        "setFullscreen": true,
+        "setFocus": true,
+        "setIcon": false,
+        "setSkipTaskbar": false,
+        "setCursorGrab": false,
+        "setCursorVisible": true,
+        "setDecorations": true,
+        "setContentProtected": false,
+        "setAlwaysOnTop": true,
+        "center": true,
+        "requestUserAttention": false
+      },
       "notification": {
         "all": true
       },
       "globalShortcut": {
         "all": true
+      },
+      "os": {
+        "all": false
+      },
+      "path": {
+        "all": false
+      },
+      "protocol": {
+        "all": false,
+        "asset": false,
+        "assetScope": []
+      },
+      "fs": {
+        "all": false,
+        "readFile": false,
+        "writeFile": false,
+        "readDir": false,
+        "copyFile": false,
+        "createDir": false,
+        "removeDir": false,
+        "removeFile": false,
+        "renameFile": false,
+        "exists": false
+      },
+      "clipboard": {
+        "all": false,
+        "writeText": false,
+        "readText": false
+      },
+      "http": {
+        "all": false,
+        "request": false
       }
     }
   }

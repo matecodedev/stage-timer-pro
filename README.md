@@ -1,224 +1,85 @@
-# 🎯 Stage Timer Pro
+# Stage Timer Pro
 
-**Una aplicación profesional de timer para eventos con branding personalizable y funcionalidades avanzadas.**
+A desktop countdown timer for live events, built for the person running the show from the booth.
 
-![Stage Timer Pro](https://img.shields.io/badge/Version-2.0-blue?style=for-the-badge)
-![Tech Stack](https://img.shields.io/badge/Tauri-Rust-orange?style=for-the-badge)
-![Frontend](https://img.shields.io/badge/React-18-blue?style=for-the-badge)
-![Styling](https://img.shields.io/badge/Tailwind-CSS-teal?style=for-the-badge)
+Conferences and productions run on time because someone is watching a clock the audience never sees. Stage Timer Pro splits that job across two screens: a control dashboard on the operator's monitor, and a full-screen display on the one facing the stage. The presenter sees the time and the cues. Nothing else.
 
-## 🌟 Características Principales
+## Features
 
-### ⏰ **Timer Avanzado**
+**Timer**
 
-- **Configuración precisa**: Horas, minutos y segundos
-- **Modo countdown**: Con alertas visuales y sonoras
-- **Modo negativo**: Continúa contando después de 0
-- **Alertas de warning**: Configurable por tiempo restante
-- **Estados visuales**: Verde (normal), Amarillo (warning), Rojo (crítico)
+- Countdown configured to the second, with a count-up mode that keeps running past zero so overruns stay visible instead of vanishing.
+- Warning and critical thresholds you set per event, each with its own color state — readable from the back of a room.
 
-### 🖥️ **Dual Monitor Support**
+**Dual monitor**
 
-- **Dashboard**: Ventana de control en monitor principal
-- **Stage**: Pantalla fullscreen automática en monitor secundario
-- **Auto-posicionamiento**: Detecta y utiliza monitor secundario
-- **Re-apertura inteligente**: Recrea ventana Stage si se cierra accidentalmente
+- The stage window detects the secondary display and opens full screen there on its own.
+- If it gets closed mid-event, it can be recreated without touching the running timer.
 
-### 💬 **Sistema de Mensajes Profesional**
+**Cue messages**
 
-- **Mensajes personalizados**: Texto libre con configuración avanzada
-- **Tamaño de fuente**: Ajustable desde 12px hasta tamaños gigantes (defecto: 200px)
-- **Efectos visuales**: Opción de titilación/parpadeo
-- **Modos de display**:
-  - Flotante (sobre el timer)
-  - Reemplazo completo (oculta el timer)
-- **Mensajes predefinidos**: TIME OUT, DESCANSO, PRÓXIMO TURNO, etc.
-- **Persistencia configurable**: Auto-ocultar o mantener hasta ocultar manual
+- Free text or presets (`TIME OUT`, `DESCANSO`, `PRÓXIMO TURNO`), sized up to presentation scale, with an optional blink for urgency.
+- Show them floating over the timer or replacing it entirely, and auto-hide them after a delay or keep them until dismissed.
 
-### 🎨 **Branding y Personalización**
+**Per-event branding**
 
-- **Logo personalizado**: Soporta imágenes desde URL
-- **Colores corporativos**: Paleta de colores completamente personalizable
-- **Nombre del evento**: Branding superior en pantalla Stage
-- **Estilos profesionales**: Sombras, efectos blur, gradientes
-- **Activación/desactivación**: Control total del branding visible
+- Event name and logo on the stage header, plus a full color palette — primary, secondary, background, and accent — so the screen matches the client's identity rather than the tool's.
 
-### 🌙 **Modo Oscuro**
+## Keyboard shortcuts
 
-- **Toggle instantáneo**: Botón dedicado o atajo `D`
-- **Transiciones suaves**: Animaciones entre modos
-- **Persistencia de sesión**: Recuerda preferencia
+The operator should never have to find a button mid-talk.
 
-### ⌨️ **Atajos de Teclado**
+| Key | Action |
+| --- | --- |
+| `Space` | Start / pause |
+| `S` | Stop |
+| `+` / `-` | Adjust by one minute |
+| `Ctrl`/`Cmd` + `+` / `-` | Adjust by five minutes |
+| `M` | Send message |
+| `H` | Hide message |
+| `D` | Toggle dark mode |
 
-| Tecla            | Función                  |
-| ---------------- | ------------------------ |
-| `Space`          | ▶️ Start / ⏸️ Pause      |
-| `S`              | ⏹️ Stop                  |
-| `+` / `-`        | ±1 minuto                |
-| `Ctrl/Cmd + +/-` | ±5 minutos               |
-| `M`              | 📤 Enviar mensaje        |
-| `H`              | 🙈 Ocultar mensaje       |
-| `D`              | 🌙/☀️ Toggle modo oscuro |
+## Tech stack
 
-## 🛠️ Instalación y Configuración
+| Layer | Technology |
+| --- | --- |
+| Shell | Tauri (Rust) |
+| UI | React |
+| Build | Vite |
 
-### Requisitos
+Packaged as a native binary, so it ships without a bundled browser runtime.
 
-- **Node.js** >= 18
-- **Rust toolchain** (rustup, cargo, rustc)
-- **macOS**: Xcode Command Line Tools
+## Getting started
+
+Requires Node.js, the Rust toolchain (`rustup`, `cargo`), and your platform's [Tauri prerequisites](https://tauri.app/start/prerequisites/). On macOS that means the Xcode command line tools:
 
 ```bash
 xcode-select --install
 ```
 
-### Setup Rápido
+Then:
 
 ```bash
-# Clonar el proyecto
-git clone <repo-url>
-cd stage-timer-tauri
-
-# Instalar dependencias
 npm install
-
-# Ejecutar en desarrollo
-npm run tauri:dev
+npm run tauri:dev     # full desktop app — dashboard and stage
+npm run tauri:build   # production binary for the current platform
 ```
 
-### Resolución de Problemas
+To iterate on the interface alone, in the browser:
 
 ```bash
-# Si aparece error EACCES en npm
-sudo chown -R $(id -u):$(id -g) ~/.npm
-
-# Limpiar cache de Rust si hay problemas
-cd src-tauri && cargo clean
+npm run dev
 ```
 
-## 🚀 Scripts Disponibles
-
-```bash
-npm run dev          # Vite solo (navegador)
-npm run tauri:dev    # Aplicación completa (Dashboard + Stage)
-npm run build        # Build frontend
-npm run tauri:build  # Empaqueta aplicación desktop
-```
-
-## 💼 Uso Comercial y Branding
-
-### Configuración de Evento
-
-1. **Nombre del evento**: Aparece en header del Stage
-2. **Logo**: URL de imagen (PNG/JPG recomendado)
-3. **Colores corporativos**:
-   - Primario: Para textos y logos
-   - Secundario: Para timer en estado normal
-   - Fondo: Color base de la aplicación
-   - Acento: Para advertencias
-
-### Casos de Uso Profesionales
-
-- ✅ **Conferencias y presentaciones**
-- ✅ **Eventos deportivos**
-- ✅ **Producciones audiovisuales**
-- ✅ **Competencias y concursos**
-- ✅ **Sesiones de capacitación**
-
-### Personalización por Cliente
-
-```javascript
-// Ejemplo de configuración de branding
-const eventBranding = {
-  eventName: "TechConf 2025",
-  logo: "https://cliente.com/logo.png",
-  colors: {
-    primary: "#1E40AF", // Azul corporativo
-    secondary: "#10B981", // Verde éxito
-    background: "#1F2937", // Gris oscuro
-    accent: "#F59E0B", // Naranja advertencia
-  },
-};
-```
-
-## 🔧 Funcionalidades Técnicas
-
-### Arquitectura
-
-- **Frontend**: React 18 + Vite 5
-- **Backend**: Rust + Tauri 1.x
-- **Comunicación**: Event-driven entre ventanas
-- **Styling**: Tailwind CSS con modo oscuro
-- **Build**: Binarios nativos multiplataforma
-
-### Características Avanzadas
-
-- **Multi-monitor detection**: Automática
-- **Window management**: Posicionamiento inteligente
-- **Real-time sync**: Entre Dashboard y Stage
-- **Audio feedback**: Beep en estado crítico
-- **State persistence**: Durante la sesión
-- **Error recovery**: Auto-recreación de ventanas
-
-## 📁 Estructura del Proyecto
+## Project structure
 
 ```
-stage-timer-tauri/
-├── src/
-│   ├── main.jsx        # Dashboard principal
-│   ├── stage.jsx       # Pantalla de presentación
-│   ├── timer.js        # Lógica del countdown
-│   └── index.css       # Estilos globales
-├── src-tauri/
-│   ├── src/main.rs     # Backend Rust
-│   ├── Cargo.toml      # Dependencias Rust
-│   └── tauri.conf.json # Configuración app
-├── index.html          # Dashboard HTML
-├── stage.html          # Stage HTML
-└── package.json        # Config Node.js
+src/         React interface — dashboard and stage views
+src-tauri/   Rust shell, window management, packaging config
+website/     Product landing page
+docs/        Design and usage notes
 ```
-
-## 🔮 Roadmap Futuro
-
-### v2.1 (Próximo)
-
-- [ ] Persistencia de configuración en archivo
-- [ ] Temas predefinidos por industria
-- [ ] Sonidos personalizables
-- [ ] Historial de eventos
-
-### v2.2 (Planeado)
-
-- [ ] Múltiples timers simultáneos
-- [ ] Plugins de terceros
-
-### v3.0 (Visión)
-
-- [ ] Cloud sync de configuraciones
-- [ ] Analytics de eventos
-- [ ] Marketplace de temas
-
-## 📄 Licencia
-
-Este proyecto está bajo licencia MIT. Libre para uso comercial.
-
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el proyecto
-2. Crea tu feature branch
-3. Commit tus cambios
-4. Push al branch
-5. Abre un Pull Request
 
 ---
 
-### 💡 **¿Listo para hacer tus eventos más profesionales?**
-
-**Stage Timer Pro** no es solo un timer - es una herramienta completa de producción que lleva tus eventos al siguiente nivel con branding personalizado y funcionalidades avanzadas.
-
----
-
-_Desarrollado con ❤️ para la comunidad de eventos profesionales_
+Built by [MateCode](https://matecode.dev) — websites and custom software.

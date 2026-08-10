@@ -211,6 +211,21 @@ async fn set_badge_label(label: Option<String>) -> Result<(), String> {
             let _ = Command::new("sh").arg("-c").arg(script).output();
         }
     }
+    
+    #[cfg(target_os = "windows")]
+    {
+        // En Windows, los badges no están disponibles nativamente
+        // Se podría implementar usando notificaciones del sistema o badges personalizados en la taskbar
+        // Por ahora, simplemente retornamos Ok para evitar errores
+        println!("Badge functionality not available on Windows: {:?}", label);
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        // En Linux, los badges dependen del entorno de escritorio
+        // Por ahora, simplemente retornamos Ok para evitar errores
+        println!("Badge functionality not available on Linux: {:?}", label);
+    }
 
     Ok(())
 }
@@ -240,23 +255,47 @@ fn register_global_shortcut(
 ) -> Result<(), String> {
     let mut global_shortcut_manager = app.global_shortcut_manager();
 
+    // Verificar si el atajo ya está registrado
+    if global_shortcut_manager.is_registered(&shortcut).unwrap_or(false) {
+        return Err(format!("Shortcut {} is already registered", shortcut));
+    }
+
     let app_handle = app.clone();
     let action_clone = action.clone();
 
-    global_shortcut_manager
-        .register(&shortcut, move || {
-            let _ = app_handle.emit_all("global-shortcut", &action_clone);
-        })
-        .map_err(|e| format!("Failed to register shortcut {}: {}", shortcut, e))
+    match global_shortcut_manager.register(&shortcut, move || {
+        let _ = app_handle.emit_all("global-shortcut", &action_clone);
+    }) {
+        Ok(_) => {
+            println!("✅ Successfully registered global shortcut: {}", shortcut);
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to register shortcut {}: {}", shortcut, e);
+            Err(format!("Failed to register shortcut {}: {}", shortcut, e))
+        }
+    }
 }
 
 #[tauri::command]
 fn unregister_global_shortcut(app: AppHandle, shortcut: String) -> Result<(), String> {
     let mut global_shortcut_manager = app.global_shortcut_manager();
 
-    global_shortcut_manager
-        .unregister(&shortcut)
-        .map_err(|e| format!("Failed to unregister shortcut {}: {}", shortcut, e))
+    // Verificar si el atajo está registrado antes de intentar quitarlo
+    if !global_shortcut_manager.is_registered(&shortcut).unwrap_or(false) {
+        return Ok(()); // No error si ya no está registrado
+    }
+
+    match global_shortcut_manager.unregister(&shortcut) {
+        Ok(_) => {
+            println!("✅ Successfully unregistered global shortcut: {}", shortcut);
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to unregister shortcut {}: {}", shortcut, e);
+            Err(format!("Failed to unregister shortcut {}: {}", shortcut, e))
+        }
+    }
 }
 
 #[tauri::command]
@@ -265,6 +304,22 @@ fn is_global_shortcut_registered(app: AppHandle, shortcut: String) -> Result<boo
     Ok(global_shortcut_manager
         .is_registered(&shortcut)
         .unwrap_or(false))
+}
+
+#[tauri::command]
+fn unregister_all_shortcuts(app: AppHandle) -> Result<(), String> {
+    let mut global_shortcut_manager = app.global_shortcut_manager();
+    
+    match global_shortcut_manager.unregister_all() {
+        Ok(_) => {
+            println!("✅ Successfully unregistered all global shortcuts");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to unregister all shortcuts: {}", e);
+            Err(format!("Failed to unregister all shortcuts: {}", e))
+        }
+    }
 }
 
 // Comandos para integración con software de video (Resolume Arena, OBS, etc.)
@@ -337,51 +392,99 @@ fn main() {
             register_global_shortcut,
             unregister_global_shortcut,
             is_global_shortcut_registered,
+            unregister_all_shortcuts,
             set_stage_for_capture,
             reset_stage_window
         ])
         .setup(|app| {
             // Create stage window pointing to stage.html
             // Position it on secondary monitor using a reasonable offset
-            WindowBuilder::new(app, "stage", WindowUrl::App("/stage.html".into()))
+            let stage_window = WindowBuilder::new(app, "stage", WindowUrl::App("/stage.html".into()))
                 .title("Stage Display")
                 .resizable(true)
                 .fullscreen(false) // Start windowed, then position and fullscreen
                 .position(1920.0, 0.0) // Standard dual monitor setup assumption
                 .build()?;
 
-            // Registrar atajos globales por defecto
+            // Configurar el manejo de eventos de cierre para evitar que la app se cuelgue
+            let app_handle = app.handle();
+            stage_window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    // Evitar que el cierre de la ventana stage cierre toda la aplicación
+                    api.prevent_close();
+                    // En su lugar, ocultar la ventana
+                    if let Some(stage_win) = app_handle.get_window("stage") {
+                        let _ = stage_win.hide();
+                    }
+                }
+            });
+
+            // Configurar el manejo de eventos para la ventana principal
+            if let Some(main_window) = app.get_window("main") {
+                let app_handle = app.handle();
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { .. } = event {
+                        // Limpiar atajos globales antes de cerrar
+                        let mut global_shortcut_manager = app_handle.global_shortcut_manager();
+                        let _ = global_shortcut_manager.unregister_all();
+                        
+                        // Cerrar todas las ventanas
+                        if let Some(stage_win) = app_handle.get_window("stage") {
+                            let _ = stage_win.close();
+                        }
+                        
+                        // Permitir que la aplicación se cierre
+                        std::process::exit(0);
+                    }
+                });
+            }
+
+            // Registrar atajos globales por defecto (Windows compatible)
             let mut global_shortcut_manager = app.global_shortcut_manager();
             let app_handle = app.handle();
 
-            // Cmd+Shift+Space para start/pause
+            // Usar atajos que no interfieran con Windows
+           
+           
+             // F9, F10, F11 son raramente usados por otras aplicaciones
+            
+            // F9 para start/pause (fácil de recordar)
+            let shortcut_toggle = "F9";
             let app_clone = app_handle.clone();
-            global_shortcut_manager
-                .register("Cmd+Shift+Space", move || {
+            if let Err(e) = global_shortcut_manager
+                .register(shortcut_toggle, move || {
                     let _ = app_clone.emit_all("global-shortcut", "toggle-timer");
                 })
-                .map_err(|e| format!("Failed to register Cmd+Shift+Space: {}", e))?;
+            {
+                eprintln!("Failed to register {}: {}", shortcut_toggle, e);
+            }
 
-            // Cmd+Shift+R para reset
+            // F10 para reset
+            let shortcut_reset = "F10";
             let app_clone = app_handle.clone();
-            global_shortcut_manager
-                .register("Cmd+Shift+R", move || {
+            if let Err(e) = global_shortcut_manager
+                .register(shortcut_reset, move || {
                     let _ = app_clone.emit_all("global-shortcut", "reset-timer");
                 })
-                .map_err(|e| format!("Failed to register Cmd+Shift+R: {}", e))?;
+            {
+                eprintln!("Failed to register {}: {}", shortcut_reset, e);
+            }
 
-            // Cmd+Shift+F para toggle fullscreen del stage
+            // F11 para toggle fullscreen del stage
+            let shortcut_fullscreen = "F11";
             let app_clone = app_handle.clone();
-            global_shortcut_manager
-                .register("Cmd+Shift+F", move || {
+            if let Err(e) = global_shortcut_manager
+                .register(shortcut_fullscreen, move || {
                     let _ = app_clone.emit_all("global-shortcut", "toggle-stage-fullscreen");
                 })
-                .map_err(|e| format!("Failed to register Cmd+Shift+F: {}", e))?;
+            {
+                eprintln!("Failed to register {}: {}", shortcut_fullscreen, e);
+            }
 
             println!("✅ Aplicación iniciada con atajos globales:");
-            println!("   Cmd+Shift+Space: Start/Pause timer");
-            println!("   Cmd+Shift+R: Reset timer");
-            println!("   Cmd+Shift+F: Toggle stage fullscreen");
+            println!("   F9: Start/Pause timer");
+            println!("   F10: Reset timer");
+            println!("   F11: Toggle stage fullscreen");
 
             Ok(())
         })
