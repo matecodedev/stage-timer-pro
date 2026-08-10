@@ -2066,15 +2066,17 @@ function App() {
                   <div
                     className="h-full transition-all duration-1000"
                     style={{
-                      width: `${Math.max(
-                        0,
-                        Math.min(
-                          100,
-                          ((state.totalMs - state.remainingMs) /
-                            state.totalMs) *
-                            100
-                        )
-                      )}%`,
+                      width: `${
+                        totalMs > 0
+                          ? Math.max(
+                              0,
+                              Math.min(
+                                100,
+                                ((totalMs - state.remainingMs) / totalMs) * 100
+                              )
+                            )
+                          : 0
+                      }%`,
                       backgroundColor: getPreviewTextColor(),
                     }}
                   ></div>
@@ -2096,10 +2098,11 @@ function App() {
                     Progreso
                   </div>
                   <div className="text-gray-800 dark:text-gray-200">
-                    {Math.round(
-                      ((state.totalMs - state.remainingMs) / state.totalMs) *
-                        100 || 0
-                    )}
+                    {totalMs > 0
+                      ? Math.round(
+                          ((totalMs - state.remainingMs) / totalMs) * 100
+                        )
+                      : 0}
                     %
                   </div>
                 </div>
@@ -2108,10 +2111,8 @@ function App() {
                     Secuencia
                   </div>
                   <div className="text-gray-800 dark:text-gray-200">
-                    {state.currentSequenceIndex !== null
-                      ? `${state.currentSequenceIndex + 1}/${
-                          timerSequence.length
-                        }`
+                    {sequenceMode && timerSequence.length > 0
+                      ? `${currentSequenceIndex + 1}/${timerSequence.length}`
                       : "Individual"}
                   </div>
                 </div>
