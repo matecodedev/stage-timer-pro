@@ -322,60 +322,6 @@ fn unregister_all_shortcuts(app: AppHandle) -> Result<(), String> {
     }
 }
 
-// Comandos para integración con software de video (Resolume Arena, OBS, etc.)
-#[tauri::command]
-fn set_stage_for_capture(app: AppHandle, width: u32, height: u32) -> Result<(), String> {
-    if let Some(stage_win) = app.get_window("stage") {
-        // Configurar ventana para captura de video óptima
-        stage_win.set_fullscreen(false).map_err(|e| e.to_string())?;
-
-        // Tamaño estándar para video (1920x1080, 1280x720, etc.)
-        stage_win
-            .set_size(tauri::Size::Physical(tauri::PhysicalSize { width, height }))
-            .map_err(|e| e.to_string())?;
-
-        // Posicionar en una ubicación fija para facilitar captura
-        stage_win
-            .set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                x: 100,
-                y: 100,
-            }))
-            .map_err(|e| e.to_string())?;
-
-        // Configurar ventana para captura
-        stage_win
-            .set_always_on_top(true)
-            .map_err(|e| e.to_string())?;
-        stage_win.set_resizable(false).map_err(|e| e.to_string())?;
-        stage_win
-            .set_title("Stage Timer - Video Capture")
-            .map_err(|e| e.to_string())?;
-
-        println!(
-            "✅ Stage configurado para captura de video: {}x{}",
-            width, height
-        );
-    }
-    Ok(())
-}
-
-#[tauri::command]
-fn reset_stage_window(app: AppHandle) -> Result<(), String> {
-    if let Some(stage_win) = app.get_window("stage") {
-        // Resetear configuración de la ventana
-        stage_win
-            .set_always_on_top(false)
-            .map_err(|e| e.to_string())?;
-        stage_win.set_resizable(true).map_err(|e| e.to_string())?;
-        stage_win
-            .set_title("Stage Display")
-            .map_err(|e| e.to_string())?;
-
-        println!("✅ Stage window resetted to normal mode");
-    }
-    Ok(())
-}
-
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -392,9 +338,7 @@ fn main() {
             register_global_shortcut,
             unregister_global_shortcut,
             is_global_shortcut_registered,
-            unregister_all_shortcuts,
-            set_stage_for_capture,
-            reset_stage_window
+            unregister_all_shortcuts
         ])
         .setup(|app| {
             // Create stage window pointing to stage.html

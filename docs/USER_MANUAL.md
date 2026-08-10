@@ -14,7 +14,6 @@
 6. [Branding Personalizado](#branding-personalizado)
 7. [Atajos de Teclado](#atajos-de-teclado)
 8. [Dual Monitor](#dual-monitor)
-9. [Integración con Software de Video](#integración-con-software-de-video)
 10. [Resolución de Problemas](#resolución-de-problemas)
 
 ---
@@ -30,7 +29,6 @@
 - **⌨️ Atajos Globales**: Control sin cambiar de aplicación
 - **💬 Sistema de Mensajes**: Comunicación visual con la audiencia
 - **🎨 Branding Personalizado**: Logo y colores corporativos
-- **🎥 Integración de Video**: Compatible con OBS Studio y Resolume Arena
 - **🔔 Notificaciones**: Alertas nativas del sistema
 
 ---
@@ -226,54 +224,6 @@ Pantalla fullscreen que muestra:
 
 ---
 
-## 🎥 Integración con Software de Video
-
-### OBS Studio Integration
-
-#### Método 1: Window Capture
-
-1. **OBS**: Sources → Add → Window Capture
-2. **Window**: "Stage Timer Pro - Video Capture"
-3. **Configure**: Crop/resize según necesidad
-4. ✅ **Ventaja**: Control total en OBS
-
-#### Método 2: Virtual Camera
-
-1. **OBS**: Start Virtual Camera
-2. **Resolume**: Sources → Webcam → "OBS Virtual Camera"
-3. ✅ **Ventaja**: Integración directa
-
-### Resolume Arena Integration
-
-#### Método 1: NDI (Profesional)
-
-1. **Instalar**: NDI Tools
-2. **NDI Screen Capture**: Select "Stage Timer - Video Capture"
-3. **Resolume**: Sources → NDI → "Stage Timer"
-4. ✅ **Ventaja**: Calidad profesional, low latency
-
-#### Método 2: DirectShow
-
-1. **Resolume**: Sources → DirectShow
-2. **Device**: "Screen Capture"
-3. **Region**: Stage Timer window
-4. ✅ **Ventaja**: Directo, sin software adicional
-
-#### Método 3: OBS Bridge
-
-1. **OBS**: Capture Stage Timer
-2. **OBS**: Virtual Camera activa
-3. **Resolume**: Webcam source
-4. ✅ **Ventaja**: Máxima compatibilidad
-
-### Configuración Recomendada
-
-```
-Resolution: 1920x1080 (Full HD)
-Framerate: 30 FPS
-Format: RGB24/YUV420
-Aspect: 16:9
-```
 
 ---
 
@@ -303,11 +253,6 @@ Aspect: 16:9
 - **Formato**: PNG/JPG recomendado
 - **Tamaño**: Máximo 2MB
 
-#### Integración con OBS/Resolume
-
-- **Window name**: Debe aparecer "Stage Timer - Video Capture"
-- **Permisos**: Permitir grabación de pantalla
-- **Resolución**: Ajustar capture area
 
 ### 📞 Soporte Técnico
 
@@ -324,7 +269,6 @@ Aspect: 16:9
 - **Configuración**: Timer de 30min por set
 - **Mensajes**: "5 MINUTES LEFT", "TIME OUT"
 - **Branding**: Logo del festival
-- **Video**: NDI → Resolume → LED screens
 
 ### 🎭 Conferencias
 

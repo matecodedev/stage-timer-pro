@@ -56,7 +56,6 @@
 - **Window Management**: Multi-window coordination
 - **Global Shortcuts**: System-wide hotkey handling
 - **OS Integration**: Notifications, dock badges
-- **Video Capture**: Window management for streaming
 
 #### Communication
 
@@ -143,7 +142,6 @@ stage-timer-pro/
 ├── docs/                        # Documentación
 │   ├── USER_MANUAL.md
 │   ├── INSTALLATION_GUIDE.md
-│   ├── VIDEO_INTEGRATION.md
 │   ├── FAQ.md
 │   └── TECHNICAL_DOCS.md
 ├── package.json                 # Node.js dependencies

@@ -64,7 +64,6 @@ Al abrir por primera vez, macOS pedirá permisos:
    - System Preferences → Security & Privacy → Privacy
    - Accessibility → ✅ Stage Timer Pro
 
-2. **Screen Recording** (para video capture)
    - Security & Privacy → Privacy
    - Screen Recording → ✅ Stage Timer Pro
 
@@ -160,7 +159,6 @@ Al abrir por primera vez, macOS pedirá permisos:
 2. **Dual monitor**: Verificar que Stage aparezca en segundo monitor
 3. **Atajos globales**: Probar `⌘+Shift+Space` desde otra app
 4. **Mensajes**: Enviar mensaje de prueba
-5. **Video capture**: Verificar que sea visible en OBS/otros software
 
 ---
 
@@ -223,7 +221,6 @@ msiexec /i "Stage Timer Pro_1.0.2_x64_en-US.msi" /l*v install.log
 - [ ] **Atajos globales** funcionan desde otras apps
 - [ ] **Mensajes** se muestran correctamente
 - [ ] **Branding** se puede configurar
-- [ ] **Video capture** es visible en software externo
 
 ### Información del Sistema
 

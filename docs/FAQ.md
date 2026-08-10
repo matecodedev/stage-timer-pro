@@ -10,7 +10,6 @@
 2. [Uso Básico](#uso-básico)
 3. [Atajos de Teclado](#atajos-de-teclado)
 4. [Dual Monitor](#dual-monitor)
-5. [Integración de Video](#integración-de-video)
 6. [Branding y Personalización](#branding-y-personalización)
 7. [Problemas Técnicos](#problemas-técnicos)
 8. [Licencias y Comercial](#licencias-y-comercial)
@@ -46,7 +45,7 @@ O: System Preferences → Security → "Open Anyway"
 
 ### ❓ **¿Necesito permisos especiales?**
 
-**macOS**: Accessibility (atajos globales) + Screen Recording (video capture)  
+**macOS**: Accessibility (atajos globales)  
 **Windows**: Ejecutar como administrador (solo primera vez)
 
 ### ❓ **¿Cuánto espacio ocupa la aplicación?**
@@ -163,45 +162,6 @@ La app funciona perfectamente con un solo monitor:
 
 ---
 
-## 🎥 Integración de Video
-
-### ❓ **¿Cómo capturo Stage Timer en OBS?**
-
-1. **OBS** → Sources → Add → **Window Capture**
-2. **Window**: "Stage Timer - Video Capture"
-3. ✅ **Listo** - se captura en tiempo real
-
-### ❓ **¿Funciona con Resolume Arena?**
-
-✅ **Múltiples métodos**:
-
-- **NDI** (profesional, baja latencia)
-- **DirectShow** capture
-- **OBS Virtual Camera** bridge
-
-### ❓ **¿Puedo usarlo para streaming en vivo?**
-
-✅ **Perfectamente compatible**:
-
-- **Twitch/YouTube**: Via OBS
-- **Facebook Live**: Via streaming software
-- **Professional broadcast**: Via Wirecast/vMix
-
-### ❓ **¿Genera audio la aplicación?**
-
-❌ **Solo video**. El audio debe venir de fuentes externas:
-
-- Micrófono ambiente
-- Música de fondo
-- Audio separado en el software de captura
-
-### ❓ **¿Qué resolución recomiendan para streaming?**
-
-```
-Full HD: 1920x1080 (broadcast profesional)
-HD: 1280x720 (streaming básico)
-4K: 3840x2160 (producción cinematográfica)
-```
 
 ---
 
@@ -396,7 +356,6 @@ HD: 1280x720 (streaming básico)
 Timer: 30-45 min sets
 Messages: "5 MIN LEFT", "TIME"
 Colors: Matching event branding
-Video: NDI → Resolume → LED walls
 ```
 
 **🎭 Conferencias**:

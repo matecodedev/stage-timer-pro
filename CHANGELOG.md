@@ -5,6 +5,24 @@ All notable changes to Stage Timer Pro are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-08-09
+
+### Removed
+
+- **Video software integration.** The panel offered capture presets for
+  1920×1080, 1280×720 and 1024×768, plus guidance for OBS and Resolume.
+  It never worked reliably, and a feature that half-works in a live show
+  is worse than one that was never offered — the operator plans around a
+  promise the app cannot keep.
+
+  Gone with it: the `set_stage_for_capture` and `reset_stage_window`
+  commands in the Rust shell, and every documentation claim about NDI,
+  DirectShow, virtual cameras and chromakey that the application never
+  actually implemented.
+
+  Capturing the stage window in OBS still works — it is an ordinary
+  window, like any other. It just no longer pretends to be a feature.
+
 ## [1.0.5] - 2026-08-09
 
 ### Changed
