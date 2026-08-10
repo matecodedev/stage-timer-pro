@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { Countdown, formatMs } from "./timer";
+import { Countdown, formatMs, readableOnBlack } from "./timer";
 import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
 
@@ -92,7 +92,7 @@ function App() {
   });
   const [logo, setLogo] = useState("");
   const [logoSize, setLogoSize] = useState(120); // Tamaño en píxeles, sincronizado con stage
-  const [blackBackground, setBlackBackground] = useState(false);
+  const [blackBackground, setBlackBackground] = useState(true);
   const [showBranding, setShowBranding] = useState(true);
 
   // Estados globales para mensajes y branding actual
@@ -755,9 +755,10 @@ function App() {
     }
   };
 
-  // Funciones para la vista previa del stage
-  const getPreviewBackgroundColor = () => {
-    if (blackBackground) return "#000000"; // Fondo negro si está activado
+  // Funciones para la vista previa del stage. Espejan a getStateColor,
+  // getBackgroundColor y getForegroundColor de stage.jsx: si divergen, el
+  // operador ve una cosa en el dashboard y el orador otra en la pantalla.
+  const getPreviewStateColor = () => {
     if (state.color === "critical") return "#DC2626"; // Rojo crítico
     if (state.color === "warning") return "#EF4444"; // Rojo warning
     if (state.color === "caution") return "#F59E0B"; // Naranja/amarillo
@@ -766,9 +767,11 @@ function App() {
     return "#1F2937"; // Gris por defecto cuando está detenido
   };
 
-  const getPreviewTextColor = () => {
-    return "#FFFFFF"; // Siempre blanco para buena legibilidad
-  };
+  const getPreviewBackgroundColor = () =>
+    blackBackground ? "#000000" : getPreviewStateColor();
+
+  const getPreviewTextColor = () =>
+    blackBackground ? readableOnBlack(getPreviewStateColor()) : "#FFFFFF";
 
   const hideMessage = async () => {
     // Limpiar mensaje global
@@ -1962,6 +1965,9 @@ function App() {
                   />
                   <span className="text-gray-600 dark:text-gray-300">
                     Fondo negro
+                    <span className="block text-xs opacity-70">
+                      El color del estado pinta el contador, no el fondo
+                    </span>
                   </span>
                 </label>
               </div>

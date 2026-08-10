@@ -5,6 +5,31 @@ All notable changes to Stage Timer Pro are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-08-09
+
+### Changed
+
+- **The stage display is now black by default, and the state colour paints
+  the countdown instead of the background.** A full-screen wash of
+  saturated green or red on a 65" panel a metre from the speaker's face is
+  punishing to look at for forty minutes. The colour still carries the same
+  information — it just stops being a floodlight. The previous behaviour is
+  one checkbox away: turn off *Fondo negro* in the branding panel.
+- Cue messages follow the same rule, so the timer and the message always
+  read as one surface.
+
+### Fixed
+
+- A state colour too dark to survive on black — the grey used when the
+  timer is stopped, or a dark brand colour — now falls back to white.
+  Legibility wins over palette fidelity: a countdown nobody can read from
+  the back of the room is worse than one without colour.
+
+### Removed
+
+- `website/`, an unfinished React landing page for the product. It was
+  never part of the application build. Recoverable from git history.
+
 ## [1.0.4] - 2026-08-09
 
 ### Added

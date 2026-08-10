@@ -1,3 +1,19 @@
+// Sobre fondo negro el color del estado pinta el contador en vez del fondo.
+// Algunos colores —el gris de "detenido", o un color de marca oscuro— quedan
+// ilegibles ahí, y un contador que no se lee es peor que uno sin color.
+// Devuelve el color pedido, o blanco si no sobrevive sobre negro.
+export function readableOnBlack(hex, fallback = "#FFFFFF") {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return fallback;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  // Luminancia relativa (Rec. 709). Por debajo de ~60 sobre 255 no se lee
+  // a diez metros, que es la distancia real de lectura de una pantalla así.
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 60 ? fallback : hex;
+}
+
 export function formatMs(ms, showNegative) {
   const neg = ms < 0;
   const abs = Math.abs(ms);

@@ -76,7 +76,6 @@ npm run dev
 ```
 src/         React interface — dashboard and stage views
 src-tauri/   Rust shell, window management, packaging config
-website/     Product landing page
 docs/        Design and usage notes
 ```
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
-import { formatMs } from './timer'
+import { formatMs, readableOnBlack } from './timer'
 import { listen } from '@tauri-apps/api/event'
 
 function Stage() {
@@ -30,7 +30,7 @@ function Stage() {
     logo: '',
     showBranding: true,
     logoSize: 80,
-    blackBackground: false
+    blackBackground: true
   })
 
   // Update branding state when it changes
@@ -240,46 +240,12 @@ function Stage() {
     return { progressPercent, progressColor, remainingPercent }
   }, [data.remainingMs, data.totalMs, data.colorInfo, branding.colors])
 
-  // Función para obtener color de texto legible para mensajes
-  const getMessageTextColor = () => {
-    const bgColor = getBackgroundColor()
-    
-    // Si el fondo es negro, usar blanco
-    if (bgColor === '#000000') {
-      return '#FFFFFF'
-    }
-    
-    // Si el fondo es del mismo color que el progressColor, usar blanco para contraste
-    if (bgColor === progressData.progressColor) {
-      return '#FFFFFF'
-    }
-    
-    // Si el fondo es rojo (crítico), usar blanco para mejor contraste
-    if (bgColor === '#DC2626' || bgColor === '#EF4444') {
-      return '#FFFFFF'
-    }
-    
-    // Si el fondo es verde, usar blanco para mejor contraste
-    if (bgColor === '#10B981' || bgColor === '#059669') {
-      return '#FFFFFF'
-    }
-    
-    // Si el fondo es amarillo/naranja, usar blanco para mejor contraste
-    if (bgColor === '#F59E0B' || bgColor === '#EF4444') {
-      return '#FFFFFF'
-    }
-    
-    // Para otros casos, usar blanco por defecto para máximo contraste
-    return '#FFFFFF'
-  }
+  // Color de texto para los mensajes: el mismo criterio que el contador.
+  const getMessageTextColor = () => getForegroundColor()
   
   // Usar colores del branding o colores avanzados
-  const getBackgroundColor = () => {
-    // Si está activado el fondo negro, usarlo siempre
-    if (branding.blackBackground) {
-      return '#000000'
-    }
-    
+  const getStateColor = () => {
+
     // Si tenemos información detallada de color, usarla
     if (data.colorInfo && data.colorInfo.bgColor) {
       return data.colorInfo.bgColor
@@ -296,6 +262,17 @@ function Stage() {
     if (data.color === 'red') return '#DC2626'
     return branding.colors.background || '#1F2937'
   }
+
+  // El fondo se queda negro salvo que se desactive a propósito. Un plano de
+  // color a pantalla completa, en un televisor grande y a un metro de la cara
+  // del orador, encandila: el color tiene que informar, no lastimar.
+  const getBackgroundColor = () =>
+    branding.blackBackground ? '#000000' : getStateColor()
+
+  // Sobre negro, el color del estado viaja en el contador y en los mensajes.
+  // Sobre un fondo de color, el blanco es lo único que contrasta con todos.
+  const getForegroundColor = () =>
+    branding.blackBackground ? readableOnBlack(getStateColor()) : '#FFFFFF'
 
   // Determinar si mostrar el timer o solo el mensaje
   const showTimer = !msg || !msg.replaceTimer
@@ -392,9 +369,10 @@ function Stage() {
         <div className={`text-center ${blink ? 'blink' : ''}`}>
           <div 
             className="font-mono font-bold drop-shadow-lg" 
-            style={{ 
-              fontSize: '18vw', 
+            style={{
+              fontSize: '18vw',
               lineHeight: 1,
+              color: getForegroundColor(),
               textShadow: '4px 4px 8px rgba(0,0,0,0.3)'
             }}
           >
